@@ -1,0 +1,16 @@
+# Implementation status against the approved specification
+
+| Subsystem | This delivery | Remaining |
+| --- | --- | --- |
+| Connector fabric | Ownership scaffold | Connectors, CDC, offline agents, schema inference, HyperAuto |
+| Catalog storage | SQLite snapshots, dataset transactions, manifests, forks, conservative merges | Parquet/Iceberg, storage adapters, GC/retention, general merge bases and row conflicts, protected promotion |
+| Compute pipelines | Ownership scaffold | Visual DAG, compiler, workers, source bindings, health checks |
+| Ontology kernel | Types/interfaces/links, scalar validation, object revisions, governed reads | Stable schema IDs/renames, indexed query language, spatial/media/time-series, scale |
+| Kinetic Actions | Typed internal edits, quorum approvals, atomicity, idempotency | Sandboxed FoO, full queue lifecycle, external outbox and reconciliation |
+| OSDK | TypeScript/Python/Java generator boundaries | Actual generation, publishing and compatibility tests |
+| Workshop/Slate | Ownership scaffold | UI builders, stateful widgets and isolated custom runtime |
+| Contour/Quiver | Ownership scaffold | Tabular and object/time-series analytical tools |
+| AIP | Ownership scaffold | Logic, model routing, governed tools, Automate and Evals |
+| Governance | Role/project checks, Markings/floors, hash-chained audit | OIDC/ABAC policies, lineage graph, control panel, metering, signed licensing and independent audit anchors |
+
+No full architectural/feature/performance parity claim is made by this delivery. The approved full-platform scope remains the engineering target. The first slice is executable and tested, but Gate 1 production qualification remains open.

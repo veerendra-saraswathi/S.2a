@@ -1,0 +1,734 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:samanvaya:s2:gate1:operations",
+  "title": "S2 Gate 1 operation envelope",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "actions.approve"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch",
+            "invocation",
+            "effect_hash"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {},
+            "invocation": {},
+            "effect_hash": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "actions.define"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch",
+            "expected_head",
+            "name",
+            "object_type",
+            "writable_properties"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {},
+            "expected_head": {},
+            "name": {},
+            "object_type": {},
+            "writable_properties": {},
+            "approvals": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "actions.execute"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch",
+            "invocation"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {},
+            "invocation": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "actions.submit"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch",
+            "expected_head",
+            "action",
+            "edits",
+            "idempotency_key"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {},
+            "expected_head": {},
+            "action": {},
+            "edits": {},
+            "idempotency_key": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "audit.verify"
+        },
+        "params": {
+          "type": "object",
+          "required": [],
+          "additionalProperties": false,
+          "properties": {}
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "branches.fork"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch",
+            "name"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {},
+            "name": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "branches.head"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "branches.merge"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch",
+            "source",
+            "expected_head",
+            "expected_source"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {},
+            "source": {},
+            "expected_head": {},
+            "expected_source": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "datasets.abort"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch",
+            "transaction"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {},
+            "transaction": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "datasets.begin"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch",
+            "expected_head",
+            "dataset",
+            "operation",
+            "idempotency_key"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {},
+            "expected_head": {},
+            "dataset": {},
+            "operation": {},
+            "idempotency_key": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "datasets.commit"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch",
+            "transaction"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {},
+            "transaction": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "datasets.create"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch",
+            "expected_head",
+            "dataset",
+            "schema",
+            "primary_key"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {},
+            "expected_head": {},
+            "dataset": {},
+            "schema": {},
+            "primary_key": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "datasets.read"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch",
+            "dataset"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {},
+            "dataset": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "datasets.stage"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch",
+            "transaction",
+            "rows"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {},
+            "transaction": {},
+            "rows": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "links.list"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "links.put"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch",
+            "expected_head",
+            "link_id",
+            "link_type",
+            "source",
+            "target"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {},
+            "expected_head": {},
+            "link_id": {},
+            "link_type": {},
+            "source": {},
+            "target": {},
+            "label": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "objects.get"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch",
+            "object_id"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {},
+            "object_id": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "objects.list"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {},
+            "object_type": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "objects.put"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch",
+            "expected_head",
+            "object_id",
+            "object_type",
+            "values"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {},
+            "expected_head": {},
+            "object_id": {},
+            "object_type": {},
+            "values": {},
+            "label": {},
+            "expected_revision": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "ontology.define"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch",
+            "expected_head",
+            "name",
+            "definition"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {},
+            "expected_head": {},
+            "name": {},
+            "definition": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "ontology.interface"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch",
+            "expected_head",
+            "name",
+            "definition"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {},
+            "expected_head": {},
+            "name": {},
+            "definition": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "ontology.link_type"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch",
+            "expected_head",
+            "name",
+            "source_type",
+            "target_type"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {},
+            "expected_head": {},
+            "name": {},
+            "source_type": {},
+            "target_type": {},
+            "label": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "policy.restrict"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "branch",
+            "resource",
+            "label"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "branch": {},
+            "resource": {},
+            "label": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "principals.create"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "role"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "role": {},
+            "clearance": {},
+            "compartments": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "principals.revoke"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "principal"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "principal": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "projects.create"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "name"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "params"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "projects.grant"
+        },
+        "params": {
+          "type": "object",
+          "required": [
+            "project",
+            "principal"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "project": {},
+            "principal": {}
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: LicenseRef-Samanvaya-Proprietary
+# Copyright (c) 2026 Veerendra Kiran Bidarkota. All Rights Reserved.
+# Proprietary Commercial Software. See LICENSE.
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "samanvaya-s2"
+version = "0.1.0"
+description = "Proprietary Samanvaya 2 Gate 1 reference foundation"
+requires-python = ">=3.11"
+license = {text = "LicenseRef-Samanvaya-Proprietary"}
+authors = [{name = "Veerendra Kiran Bidarkota"}]
+dependencies = []
+
+[project.scripts]
+s2 = "s2.cli:main"
+
+[tool.setuptools]
+packages = ["s2", "s2_platform", "s2_catalog_storage", "s2_ontology_kernel", "s2_kinetic_actions", "s2_governance_control"]
+
+[tool.setuptools.package-dir]
+"s2" = "src/s2"
+"s2_platform" = "platform/s2_platform"
+"s2_catalog_storage" = "subsystems/s2-catalog-storage/s2_catalog_storage"
+"s2_ontology_kernel" = "subsystems/s2-ontology-kernel/s2_ontology_kernel"
+"s2_kinetic_actions" = "subsystems/s2-kinetic-actions/s2_kinetic_actions"
+"s2_governance_control" = "subsystems/s2-governance-control/s2_governance_control"
