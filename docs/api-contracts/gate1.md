@@ -38,7 +38,7 @@ Role `read` includes viewer/editor/admin; `write` includes editor/admin. Project
 
 ## Dataset sequence
 
-1. `datasets.create`: supply branch, expected head, name, schema and required scalar primary key.
+1. `datasets.create`: supply `branch`, `expected_head`, `dataset`, `schema` and a required scalar `primary_key`.
 2. `datasets.begin`: operation APPEND/UPDATE/DELETE and a unique idempotency key.
 3. `datasets.stage`: use transaction ID and a row list. Rows are `{"values":{"id":"a","value":1},"marking":{"level":0,"compartments":[]}}`. UPDATE supplies a complete replacement row. DELETE supplies only the primary key inside values.
 4. `datasets.commit`: publishes the prepared transaction. The same actor may retry COMMIT safely.

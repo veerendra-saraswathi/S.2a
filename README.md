@@ -1,48 +1,100 @@
-# Samanvaya 2 — Enterprise Data Operating System
+<div align="center">
 
-**Owner:** Veerendra Kiran Bidarkota. All Rights Reserved — Proprietary Commercial Software.
+# Samanvaya 2
 
-**Repository:** https://github.com/veerendra-saraswathi/S.2a
+### Enterprise Data Operating System & Operational Ontology Platform
 
-**Status:** Gate 1 executable reference foundation, version 0.2.0. This is a development implementation, not a completed Foundry/AIP-equivalent production platform.
+**Governed data · Versioned Ontology · Transactional Actions**
 
-The approved ten-subsystem architecture is scaffolded. Four subsystems contain executable Python code: catalog/storage, governance, Ontology and kinetic Actions. The remaining subsystem boundaries are explicitly marked as planned.
+`v0.2.0` · `Gate 1 reference foundation` · `104 tests passed locally` · `Proprietary commercial software`
 
-## Run now
+[Architecture](docs/architecture/platform-overview.md) · [Tech stack](docs/TECH_STACK.md) · [Technical document](docs/TECHNICAL_OVERVIEW.md) · [Quick start](docs/guides/QUICKSTART.md) · [Documents & presentations](docs/resources/README.md)
 
-Python 3.11 or later is required. The JSON reference backend requires no pip installation or network access. The optional Parquet/Iceberg backends require the storage dependencies below. Without them, storage tests are explicitly skipped; use the required-storage command to prevent a partial pass.
+</div>
 
-```bash
-python3 -m unittest discover -s tests -v
-python3 tooling/check_headers.py
-python3 tooling/s2.py --db .local/demo.db demo
+---
+
+## What we are building
+
+Samanvaya 2 (**S2**) brings enterprise datasets, operational objects, business rules and governed Actions into one versioned platform. Its purpose is to connect what an organization knows with the decisions and workflows it can authorize, execute and audit.
+
+The long-term architecture targets capabilities associated with **Palantir Foundry and AIP** across data integration, branching, semantic Ontology, operational applications and governed AI. S2 is independently developed proprietary software. Architectural parity is an engineering objective; the current implementation is the foundation described below.
+
+**Intended domains:** autonomous fleet operations, aerospace and systems engineering, energy and utilities, heavy manufacturing, logistics and critical infrastructure. Domain packages are planned; the current demonstration uses synthetic manufacturing data.
+
+**Deployment direction:** cloud SaaS, dedicated customer VPCs and air-gapped enterprise installations. Today's runnable implementation is a local, single-node reference platform.
+
+## Current milestone
+
+| Area | Available in v0.2.0 |
+| --- | --- |
+| **Governance** | Tenant/project isolation, roles, classification levels and compartments, property redaction and live restrictions across branches |
+| **Versioned data** | JSON, local Parquet and local Iceberg v2 snapshots; staged APPEND/UPDATE/DELETE transactions; retry-safe COMMIT |
+| **Branching** | Immutable cross-resource manifests, isolated forks, expected-head publication and conservative three-way merges |
+| **Ontology** | Typed object schemas, interfaces, typed links, object revisions and permission-filtered reads |
+| **Actions** | Atomic edits across multiple objects, distinct-admin approval quorum and execution-time revalidation |
+| **Evidence** | Per-tenant hash-chained audit records, snapshot integrity checks and a read-only storage recovery report |
+| **Developer access** | Python application boundary, CLI, loopback development API and synthetic end-to-end demo |
+
+**Validation baseline — 15 November 2026:** 104 tests passed locally across JSON, Parquet and Iceberg. The Iceberg demo completed an internal Action, verified its audit chain and reported no broken or unreferenced artifacts. See the [validation record](docs/operations/storage-validation.md) for coverage and limits. This is functional validation, not a performance or production-readiness claim.
+
+## Architecture at a glance
+
+```mermaid
+flowchart TD
+    Clients["CLI and development API"] --> Service["S2 application boundary"]
+    Service --> Gov["Identity, Markings and audit"]
+    Service --> Catalog["Catalog and branches"]
+    Service --> Ontology["Ontology and objects"]
+    Service --> Actions["Actions and approvals"]
+    Actions --> Ontology
+    Catalog --> Files["Sealed Parquet / Iceberg artifacts"]
+    Catalog --> DB["SQLite transactional state"]
+    Ontology --> DB
+    Actions --> DB
+    Gov --> DB
 ```
 
-The demo creates a synthetic manufacturing tenant, commits a dataset, explicitly creates an Ontology Asset, executes a governed internal Action and creates a scenario branch. It has no external system effects. Every run creates a new synthetic tenant. It does not print an authentication token.
+The application boundary validates current authorization and coordinates the transaction. Dataset files are prepared, sealed and verified **before** their descriptor is published with the branch head and audit entry. Branches refer to immutable revisions, so a new snapshot does not overwrite the data used by an older branch.
 
-Start a separate development installation:
+[Explore the platform architecture →](docs/architecture/platform-overview.md) · [Read the file-storage protocol →](docs/architecture/file-storage.md)
 
-```bash
-python3 tooling/s2.py --db .local/dev.db bootstrap --tenant "Development" --clearance 3 --compartment ENG
-python3 tooling/s2.py --db .local/dev.db serve --port 8080
-```
+## Ten-subsystem platform
 
-Bootstrap is a host-administrator operation. It prints the initial administrator credential once; keep that credential private. The database stores only its SHA-256 hash. The API listens on **127.0.0.1 only** and uses a bearer token. It is not a production TLS/OIDC gateway.
+Four subsystem packages currently contain executable foundation code. The remaining six contain architecture scaffolds for subsequent delivery.
 
-`GET /health` returns development liveness. `POST /v1/operations` accepts a JSON envelope and an `Authorization: Bearer ...` header. There is no HTTP tenant-bootstrap endpoint.
+| Subsystem | Responsibility | Status |
+| --- | --- | --- |
+| [Connector Fabric](subsystems/s2-connector-fabric/README.md) | Enterprise connectors, CDC, offline agents and automated schema discovery | Planned |
+| [Catalog & Storage](subsystems/s2-catalog-storage/README.md) | Dataset transactions, snapshots, branch manifests and publication | Implemented reference |
+| [Compute & Pipelines](subsystems/s2-compute-pipelines/README.md) | Pipeline DAGs, transformation execution and Data Health | Planned |
+| [Ontology Kernel](subsystems/s2-ontology-kernel/README.md) | Types, interfaces, links, object state and the OSv2 foundation | Implemented reference |
+| [Kinetic Actions](subsystems/s2-kinetic-actions/README.md) | Validated mutations, approvals and transactional execution | Implemented reference |
+| [OSDK Generator](subsystems/s2-osdk-generator/README.md) | Schema-derived TypeScript, Python and Java clients | Planned |
+| [Workshop Studio](subsystems/s2-workshop-studio/README.md) | Low-code operational applications and custom application runtime | Planned |
+| [Analytics Workbench](subsystems/s2-analytics-workbench/README.md) | Tabular, object and time-series analysis | Planned |
+| [AIP Runtime](subsystems/s2-aip-runtime/README.md) | Ontology-grounded AI Logic, Automate, local models and Evals | Planned |
+| [Governance Control](subsystems/s2-governance-control/README.md) | Access controls, Markings and audit; future lineage and licensing | Implemented foundation |
 
-```json
-{
-  "operation": "projects.create",
-  "params": {"name": "Engineering pilot"}
-}
-```
+[Detailed capability status →](docs/parity-matrix/gate1.md)
 
-See [API contracts](docs/api-contracts/gate1.md) for operations and examples. Tokens determine tenant and principal context; requests cannot select an arbitrary tenant.
+## Technology stack
 
-## Parquet / Iceberg storage upgrade
+| Layer | Current implementation |
+| --- | --- |
+| Runtime | Python 3.11+; local validation on Python 3.13 |
+| Transactional catalog | SQLite WAL, immutable JSON manifests and content-digested revisions |
+| File-backed datasets | PyArrow **26.0.1**, PyIceberg **0.10.0**, SQLAlchemy **2.1.8** |
+| Data formats | Canonical JSON, Parquet, Iceberg v2 metadata and Avro manifests |
+| Authorization | First-party roles, project membership, classification and compartment checks |
+| Development interface | Python service facade, CLI and standard-library loopback HTTP server |
+| Testing & packaging | `unittest`, failure injection, subprocess crash tests, setuptools and GitHub Actions configuration |
 
-Install in a virtual environment from this repository (initial installation needs package access):
+[Full stack, dependency boundaries and planned components →](docs/TECH_STACK.md)
+
+## Run the storage demo
+
+From the repository root, with Python 3.11 or later:
 
 ```bash
 python3 -m venv .venv
@@ -52,62 +104,50 @@ S2_REQUIRE_STORAGE_TESTS=1 .venv/bin/python -m unittest discover -s tests -v
 .venv/bin/python tooling/s2.py --db .local/iceberg-demo.db storage-report
 ```
 
-Use `--storage parquet` for standalone Parquet or omit the option for the original JSON backend on a new database. The selected file backend and absolute warehouse location are persisted, so subsequent commands can omit both. Default warehouse: `<absolute-database-path>.warehouse`.
+Expected results: **104 passing tests**, Action status `COMMITTED`, audit `valid: true` and an empty `broken_references` list. A fresh successful demo also has no unreferenced artifacts. Each demo creates a new synthetic tenant; it sends no external commands and prints no authentication token.
 
-Files are written, checksummed, fsynced and read back before SQLite publishes their descriptor and audit entry. The read-only storage report identifies missing/corrupt committed snapshots and unreferenced artifacts. It never deletes anything. Original JSON snapshots remain readable after opt-in; the next successful dataset write creates a file-backed revision.
-
-**Stop existing servers and back up the database before opting an existing installation into file storage.** Enabling file storage advances the database format to version 2, which the old Gate 1 application refuses to open. Do not downgrade the application or move an Iceberg warehouse: metadata contains absolute local URIs. Keep catalog and warehouse backups together.
-
-See [storage design and recovery](docs/architecture/file-storage.md) and [storage validation](docs/operations/storage-validation.md). The storage package is a local reference implementation, not a production distributed lakehouse.
-
-## Implemented foundation
-
-| Capability | Working behaviour |
-| --- | --- |
-| Tenant/project isolation | Hashed credentials, current principal checks, project membership, admin/editor/viewer roles |
-| Mandatory Markings | Classification level and compartments; row/object suppression, property redaction and endpoint-filtered links |
-| Current security policy | Project-wide monotonic restriction floors apply across branches, independently of branch snapshots |
-| Dataset transactions | Optional sealed Parquet/Iceberg snapshots plus legacy JSON; APPEND/UPDATE/DELETE, OPEN/PREPARED/COMMITTED/ABORTED lifecycle, COMMIT finalization, idempotency and immutable snapshots |
-| Cross-resource branches | Pinned manifests containing dataset, schema, object, link and Action revisions; atomic compare-and-swap publication |
-| Branch merges | Direct-fork three-way resource merges, explicit conflicts, target/source head checks and schema validation |
-| Ontology | Scalar property schemas, interfaces, typed links and optimistic object revisions |
-| OSv2 foundation | Authoritative transactional object state and permission-filtered reads; SQLite reference implementation |
-| Kinetic Actions | Typed property-set edits across up to 100 objects, atomic commit, replay-safe execution |
-| Approvals | Distinct-admin quorum, no submitter self-approval, effect hashes and execution-time revalidation |
-| Audit | Append-only application records, per-tenant hash chain, verification, mutation/audit atomicity |
-| Offline development | JSON uses the standard library; file backends run locally after dependency installation |
-
-## Deliberate boundaries
-
-- Dataset snapshots support JSON, local Parquet and local Iceberg v2. The file backends write a complete immutable artifact per S2 snapshot. Iceberg table history is per artifact; S2 maintains dataset ancestry. Distributed/object-store catalogs, incremental file reuse, compaction and production query pushdown remain unimplemented.
-- OSv2 is the S2 component name. Billion-object scale, sub-100 ms performance, secondary full-text/vector/spatial indexes, media and time-series storage are **not implemented or benchmarked**.
-- Merge is conservative at resource granularity. It does not merge two conflicting row sets or arbitrary criss-cross histories. Branches are editable workspaces; no protected-main promotion workflow exists yet.
-- All resources are managed through versioned API mutations. A branch manifest can accommodate transforms/apps/AI definitions later, but these are not yet executable resource kinds.
-- Object materialization from source datasets is explicit in the demo. Automated source bindings, source/edit precedence and ingestion pipelines arrive later.
-- Actions support a declarative typed `set` primitive. No arbitrary Python/TypeScript Functions sandbox, external write-back, remote outbox dispatcher or physical-system control is enabled.
-- Approval queues currently consist of persisted pending invocations and decisions, not a configurable queue administration UI or an inbox API.
-- OIDC/SSO, TLS termination, encryption/key management, signed offline releases, license enforcement, tenant quotas, horizontal scaling, HA and recovery objectives remain production engineering work.
-- Audit verification detects modified retained records. It does not prove the absence of truncation by a database administrator. Independent signed checkpoints and retention infrastructure remain planned.
-- Current policy restrictions apply to every project branch. Declassification is intentionally unsupported. Historical revisions are retained internally, but there is no public arbitrary historical-snapshot read endpoint yet.
-
-## Repository map
-
-- `src/s2/`: application facade, development HTTP adapter, CLI and synthetic demo.
-- `platform/s2_platform/`: errors, request context, canonical serialization and Marking primitives.
-- `subsystems/`: the ten approved subsystem ownership boundaries.
-- `contracts/`: API and event contract locations.
-- `docs/`: architecture decisions, metamodel, current scope and deployment notes.
-- `domains/`: planned vertical packages; no forks of the platform core.
-- `tests/test_foundation.py`: executable integration, isolation, concurrency and failure-injection tests.
-- `.github/workflows/ci.yml`: test/header/demo checks on Python 3.11–3.13. CI configuration is provided; remote execution is not claimed.
-
-## Development packaging
-
-The launcher is the preferred offline path. With setuptools already available, the optional editable install is:
+For the dependency-free JSON demonstration:
 
 ```bash
-python3 -m pip install --no-build-isolation --no-deps -e .
-s2 --db .local/demo.db demo
+python3 tooling/s2.py --db .local/json-demo.db demo
 ```
 
-Read [Gate 1 architecture](docs/architecture/gate1.md), [metamodel](docs/metamodel/gate1.md), [parity status](docs/parity-matrix/gate1.md), [security](SECURITY.md) and [commercial licensing](LICENSE) before extending the implementation.
+Initial installation of the storage dependencies requires package access. Once installed, these reference backends run locally. Use the [quick-start guide](docs/guides/QUICKSTART.md) for API startup, backend selection and existing-database precautions.
+
+## Technical reading room
+
+| Document | What it explains |
+| --- | --- |
+| [Technical overview](docs/TECHNICAL_OVERVIEW.md) | End-to-end behaviour, contracts, invariants and implementation limits |
+| [Platform architecture](docs/architecture/platform-overview.md) | Subsystem boundaries, trust boundaries and publication flow |
+| [Technology stack](docs/TECH_STACK.md) | Implemented technologies, dependency versions and planned additions |
+| [Branch-aware metamodel](docs/metamodel/gate1.md) | Persisted entities, immutable revisions and live security policy |
+| [Storage design](docs/architecture/file-storage.md) | Parquet/Iceberg artifacts, durability ordering and recovery |
+| [API reference](docs/api-contracts/gate1.md) | Development operations, parameters and errors |
+| [Validation evidence](docs/operations/storage-validation.md) | Test coverage and what has been demonstrated |
+| [Roadmap](docs/ROADMAP.md) | Next delivery milestones and acceptance evidence |
+| [Documents & presentations](docs/resources/README.md) | Planned home for reviewed Word, PDF and PowerPoint materials |
+
+[Browse the documentation index →](docs/README.md)
+
+## Next development milestone
+
+**Dataset-to-Ontology bindings and governed materialization.** A committed dataset will be mapped to typed objects with explicit source provenance, deletion semantics and rules for preserving approved operational edits.
+
+Subsequent milestones cover connector/pipeline execution, typed SDKs, operational application builders and governed AI. The [roadmap](docs/ROADMAP.md) distinguishes these planned capabilities from today's executable code.
+
+## Engineering boundaries
+
+- File backends write complete local snapshots. Distributed catalogs, object-store integration, incremental file reuse and performance qualification remain future work.
+- OSv2 currently provides authoritative transactional object state. Billion-object scale, vector/spatial/media/time-series indexing and sub-100 ms performance are not claimed.
+- Actions currently support typed internal property edits. Sandboxed user Functions, remote write-back and controller integration are planned.
+- Production SSO/TLS, key management, HA, signed offline releases, license enforcement and independent audit anchors remain to be implemented.
+- A database using file storage must be backed up with its pinned warehouse. Iceberg metadata contains absolute paths; relocation and application downgrade require a designed migration.
+
+See [security guidance](SECURITY.md) and the [implementation status matrix](docs/parity-matrix/gate1.md) before planning a deployment.
+
+---
+
+**Copyright © 2026 Veerendra Kiran Bidarkota. All Rights Reserved — Proprietary Commercial Software.**
+
+Use and distribution are governed by [LICENSE](LICENSE). Third-party components retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Palantir product names are architectural references; no affiliation, technology license or achieved product equivalence is asserted.
