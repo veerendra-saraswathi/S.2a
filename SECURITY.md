@@ -13,3 +13,11 @@ All dataset/object reads and mutations must use `Service.call`. Raw database acc
 Audit triggers block ordinary UPDATE/DELETE operations. Hash verification detects content changes in retained records; independent checkpoints are needed to detect a malicious suffix truncation or complete chain rewrite. Do not claim administrator-proof immutability.
 
 The first-party code contains no autonomous controller output, external Actions or arbitrary user-code execution. Adding those capabilities requires explicit sandbox, identity, transaction and reconciliation designs.
+
+## File-backed snapshots (v0.2)
+
+Parquet files contain typed properties and canonical row envelopes including Markings. Iceberg metadata may contain sensitive file statistics. These files are not public query endpoints: every tenant must access them through S2's authorization boundary. File-storage checksums detect corruption; they are not encryption or a substitute for filesystem isolation.
+
+Private artifact directories and tenant-scoped references protect the local layout. Path traversal, symlinks and cross-tenant descriptors are rejected. A trusted host administrator can still access plaintext files. Warehouse encryption, signed manifests and remote IAM remain production work.
+
+The storage-report command is host-administrator-only, checks all retained references and never deletes artifacts. No network endpoint exposes warehouse paths or raw files. Backup/restore must preserve both the database and the original Iceberg warehouse path.

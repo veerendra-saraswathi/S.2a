@@ -4,6 +4,7 @@
 __pycache__/
 *.py[cod]
 .venv/
+.venv-storage/
 .local/
 *.db
 *.db-*
@@ -16,3 +17,4 @@ dist/
 *.egg-info/
 .coverage
 htmlcov/
+*.warehouse/

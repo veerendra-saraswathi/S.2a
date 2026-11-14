@@ -1,3 +1,3 @@
-# s2-catalog-storage: storage-adapters
+# Storage adapters
 
-Reserved architecture boundary. See the subsystem README for implementation status and the root Gate 1 scope matrix. No standalone service is implemented in this directory.
+Implemented in `../s2_catalog_storage/file_storage.py`: local Parquet and Iceberg v2 immutable snapshot artifacts. See `docs/architecture/file-storage.md` at the repository root. Remote/object-store adapters are not implemented.

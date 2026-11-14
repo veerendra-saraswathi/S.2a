@@ -7,12 +7,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "samanvaya-s2"
-version = "0.1.0"
+version = "0.2.0"
 description = "Proprietary Samanvaya 2 Gate 1 reference foundation"
 requires-python = ">=3.11"
 license = {text = "LicenseRef-Samanvaya-Proprietary"}
 authors = [{name = "Veerendra Kiran Bidarkota"}]
 dependencies = []
+
+[project.optional-dependencies]
+storage = ["pyarrow==26.0.1", "pyiceberg[pyarrow,sql-sqlite]==0.10.0", "sqlalchemy==2.1.8"]
 
 [project.scripts]
 s2 = "s2.cli:main"

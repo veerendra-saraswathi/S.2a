@@ -4,12 +4,14 @@
 """SQLite reference catalog: immutable revisions and atomic manifest publication."""
 import json
 import sqlite3
+from pathlib import Path
 from contextlib import contextmanager
 from s2_platform import Conflict, NotFound, digest, new_id, now
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS schema_version(version INTEGER PRIMARY KEY);
-INSERT OR IGNORE INTO schema_version VALUES(1);
+INSERT INTO schema_version SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM schema_version);
+CREATE TABLE IF NOT EXISTS storage_config(id INTEGER PRIMARY KEY CHECK(id=1), backend TEXT NOT NULL, warehouse TEXT);
 CREATE TABLE IF NOT EXISTS tenants(id TEXT PRIMARY KEY, name TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS principals(
  id TEXT PRIMARY KEY, tenant TEXT NOT NULL REFERENCES tenants(id), role TEXT NOT NULL,
@@ -60,13 +62,37 @@ CREATE TRIGGER IF NOT EXISTS immutable_commit_delete BEFORE DELETE ON commits
 
 
 class Store:
-    def __init__(self, path):
-        self.path = str(path)
+    def __init__(self, path, storage_backend=None, warehouse=None):
+        self.path = str(Path(path).expanduser().resolve())
+        self.file_storage = None
         with self.connect() as db:
             exists = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_version'").fetchone()
-            if exists and [row[0] for row in db.execute('SELECT version FROM schema_version')] != [1]:
+            if exists and [row[0] for row in db.execute('SELECT version FROM schema_version')] not in ([1], [2]):
                 raise Conflict('Unsupported database schema version; explicit migration required')
             db.executescript(SCHEMA)
+        from s2_platform import S2Error
+        if storage_backend not in {None, 'json', 'parquet', 'iceberg'}:
+            raise S2Error('Unknown dataset storage backend')
+        with self.transaction() as db:
+            config = db.execute('SELECT * FROM storage_config WHERE id=1').fetchone()
+            backend = storage_backend or (config['backend'] if config else 'json')
+            root = str(Path(warehouse).expanduser().resolve()) if warehouse else (
+                config['warehouse'] if config and config['warehouse'] else self.path + '.warehouse')
+            if config and config['backend'] != 'json':
+                if backend != config['backend'] or root != config['warehouse']:
+                    raise Conflict('File storage configuration is pinned; explicit migration is required')
+            if backend == 'json' and warehouse:
+                raise S2Error('warehouse requires parquet or iceberg storage')
+            if backend != 'json':
+                from s2_catalog_storage.file_storage import FileStorage
+                self.file_storage = FileStorage(root, backend)
+                # Old v0.1 code must refuse a database containing file-backed revisions.
+                db.execute('DELETE FROM schema_version')
+                db.execute('INSERT INTO schema_version VALUES(2)')
+            db.execute('INSERT INTO storage_config VALUES(1,?,?) '
+                       'ON CONFLICT(id) DO UPDATE SET backend=excluded.backend,warehouse=excluded.warehouse',
+                       (backend, root if backend != 'json' else None))
+            self.storage_backend = backend
 
     @contextmanager
     def connect(self):
@@ -85,6 +111,10 @@ class Store:
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             try:
+                if hasattr(self, 'storage_backend'):
+                    config = db.execute('SELECT backend,warehouse FROM storage_config WHERE id=1').fetchone()
+                    if config and config['backend'] != self.storage_backend:
+                        raise Conflict('Storage configuration changed; restart this service')
                 yield db
                 db.commit()
             except BaseException:
@@ -106,14 +136,26 @@ class Store:
         return json.loads(row[0])
 
     def revision(self, db, tenant, revision_id):
-        row = db.execute("SELECT payload FROM revisions WHERE tenant=? AND id=?",
+        row = db.execute("SELECT kind,payload FROM revisions WHERE tenant=? AND id=?",
                          (tenant, revision_id)).fetchone()
         if row is None:
             raise NotFound("Revision not found")
-        return json.loads(row[0])
+        payload = json.loads(row['payload'])
+        if row['kind'] == 'dataset_snapshot' and 'storage' in payload and 'rows' not in payload:
+            if self.file_storage is None:
+                from s2_catalog_storage.file_storage import StorageError
+                raise StorageError('File-backed revision requires its configured warehouse')
+            payload['rows'] = self.file_storage.read(tenant, payload['storage'])
+        return payload
 
     def put_revision(self, db, tenant, kind, payload):
         from s2_platform import canonical
+        if kind == 'dataset_snapshot':
+            payload = {key: value for key, value in payload.items() if key != 'storage'}
+            if self.file_storage is not None:
+                descriptor = self.file_storage.write(tenant, payload)
+                payload = {key: value for key, value in payload.items() if key != 'rows'}
+                payload['storage'] = descriptor
         revision = digest({"kind": kind, "payload": payload})
         db.execute("INSERT OR IGNORE INTO revisions VALUES(?,?,?,?)",
                    (revision, tenant, kind, canonical(payload)))
@@ -137,3 +179,16 @@ class Store:
         if count != 1:
             raise Conflict("Concurrent publication")
         return commit
+
+    def storage_report(self):
+        # Prevent the report from classifying an active local writer as an orphan.
+        with self.transaction() as db:
+            if self.file_storage is None:
+                return {'backend': 'json', 'referenced_artifacts': 0, 'broken_references': [],
+                        'unreferenced_artifacts': [], 'deleted': 0}
+            references = []
+            for row in db.execute("SELECT tenant,id,payload FROM revisions WHERE kind='dataset_snapshot'"):
+                payload = json.loads(row['payload'])
+                if 'storage' in payload:
+                    references.append((row['tenant'], row['id'], payload['storage']))
+            return {'backend': self.storage_backend, **self.file_storage.report(references)}

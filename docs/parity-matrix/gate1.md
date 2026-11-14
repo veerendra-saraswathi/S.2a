@@ -3,7 +3,7 @@
 | Subsystem | This delivery | Remaining |
 | --- | --- | --- |
 | Connector fabric | Ownership scaffold | Connectors, CDC, offline agents, schema inference, HyperAuto |
-| Catalog storage | SQLite snapshots, dataset transactions, manifests, forks, conservative merges | Parquet/Iceberg, storage adapters, GC/retention, general merge bases and row conflicts, protected promotion |
+| Catalog storage | JSON/Parquet/Iceberg snapshots, dataset transactions, manifests, forks, conservative merges, read-only recovery inventory | Distributed/object-store adapters, GC/retention, general merge bases and row conflicts, protected promotion |
 | Compute pipelines | Ownership scaffold | Visual DAG, compiler, workers, source bindings, health checks |
 | Ontology kernel | Types/interfaces/links, scalar validation, object revisions, governed reads | Stable schema IDs/renames, indexed query language, spatial/media/time-series, scale |
 | Kinetic Actions | Typed internal edits, quorum approvals, atomicity, idempotency | Sandboxed FoO, full queue lifecycle, external outbox and reconciliation |

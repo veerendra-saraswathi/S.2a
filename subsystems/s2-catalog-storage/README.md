@@ -2,7 +2,7 @@
 
 **Status:** Gate 1 reference implemented.
 
-Immutable dataset snapshots, transaction log, direct-fork branching and atomic cross-resource manifest publication.
+Immutable JSON, local Parquet and local Iceberg v2 dataset snapshots, transaction log, direct-fork branching and atomic manifest publication. `s2_catalog_storage/file_storage.py` implements sealed file preparation, verified reads and read-only recovery inventory.
 
 The Python package in this subsystem, where present, is the executable Gate 1 implementation. The boundary directories below reserve the approved decomposition; their README files do not represent implemented services.
 

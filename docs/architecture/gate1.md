@@ -1,12 +1,12 @@
 # Gate 1 implementation architecture
 
-Date: 15 November 2026. Status: first executable foundation slice.
+Date: 15 November 2026. Status: reference foundation, extended with optional file storage in v0.2.0. See file-storage.md for the cross-filesystem publication protocol.
 
 ## Ownership and dependency direction
 
 The HTTP adapter and CLI invoke `s2.service.Service`, which provides an explicit operation registry. It resolves authenticated context and project membership, establishes one database transaction and routes to the responsible subsystem. Domain logic is implemented in catalog, governance, Ontology and Actions packages. The facade contains project/branch orchestration; extraction into services can happen behind these contracts later.
 
-The catalog owns SQLite persistence and immutable manifest/revision primitives. Governance owns identity, authorization, security policy and audit. Ontology owns schema/interface/object/link validation. Actions own Action definitions, invocation state, approvals and edit execution. Packages depend on shared platform contracts; UI and future agents must use the application boundary rather than tables.
+The catalog owns SQLite manifest/revision persistence and optional sealed Parquet/Iceberg dataset artifacts. Governance owns identity, authorization, security policy and audit. Ontology owns schema/interface/object/link validation. Actions own Action definitions, invocation state, approvals and edit execution. Packages depend on shared platform contracts; UI and future agents must use the application boundary rather than tables.
 
 ## Transaction boundary
 

@@ -14,8 +14,8 @@ from s2_kinetic_actions.actions import Actions
 
 
 class Service:
-    def __init__(self, database):
-        self.store = Store(database)
+    def __init__(self, database, storage_backend=None, warehouse=None):
+        self.store = Store(database, storage_backend=storage_backend, warehouse=warehouse)
         self.security = Security()
         self.kernel = Kernel(self.store, self.security)
         self.datasets = Datasets(self.store, self.security, self.kernel)

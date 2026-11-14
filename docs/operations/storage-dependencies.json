@@ -1,0 +1,321 @@
+[
+  {
+    "name": "annotated-types",
+    "version": "0.8.0",
+    "license_expression": "MIT",
+    "license_metadata": null,
+    "project_urls": [
+      "Homepage, https://github.com/annotated-types/annotated-types",
+      "Source, https://github.com/annotated-types/annotated-types",
+      "Changelog, https://github.com/annotated-types/annotated-types/releases"
+    ]
+  },
+  {
+    "name": "cachetools",
+    "version": "6.2.6",
+    "license_expression": "MIT",
+    "license_metadata": null,
+    "project_urls": [
+      "Homepage, https://github.com/tkem/cachetools/"
+    ]
+  },
+  {
+    "name": "certifi",
+    "version": "2026.10.23",
+    "license_expression": null,
+    "license_metadata": "MPL-2.0",
+    "project_urls": [
+      "Source, https://github.com/certifi/python-certifi"
+    ]
+  },
+  {
+    "name": "charset-normalizer",
+    "version": "3.5.2",
+    "license_expression": null,
+    "license_metadata": "MIT",
+    "project_urls": [
+      "Changelog, https://github.com/jawah/charset_normalizer/blob/master/CHANGELOG.md",
+      "Documentation, https://charset-normalizer.readthedocs.io/",
+      "Code, https://github.com/jawah/charset_normalizer",
+      "Issue tracker, https://github.com/jawah/charset_normalizer/issues"
+    ]
+  },
+  {
+    "name": "click",
+    "version": "8.5.1",
+    "license_expression": "BSD-3-Clause",
+    "license_metadata": null,
+    "project_urls": [
+      "Changes, https://click.palletsprojects.com/page/changes/",
+      "Chat, https://discord.gg/pallets",
+      "Documentation, https://click.palletsprojects.com/",
+      "Donate, https://palletsprojects.com/donate",
+      "Source, https://github.com/pallets/click/"
+    ]
+  },
+  {
+    "name": "fsspec",
+    "version": "2026.9.0",
+    "license_expression": "BSD-3-Clause",
+    "license_metadata": null,
+    "project_urls": [
+      "Changelog, https://filesystem-spec.readthedocs.io/en/latest/changelog.html",
+      "Documentation, https://filesystem-spec.readthedocs.io/en/latest/",
+      "Homepage, https://github.com/fsspec/filesystem_spec"
+    ]
+  },
+  {
+    "name": "idna",
+    "version": "3.20",
+    "license_expression": "BSD-3-Clause",
+    "license_metadata": null,
+    "project_urls": [
+      "Changelog, https://github.com/kjd/idna/blob/master/HISTORY.md",
+      "Issue tracker, https://github.com/kjd/idna/issues",
+      "Source, https://github.com/kjd/idna"
+    ]
+  },
+  {
+    "name": "markdown-it-py",
+    "version": "4.3.0",
+    "license_expression": null,
+    "license_metadata": null,
+    "project_urls": [
+      "Documentation, https://markdown-it-py.readthedocs.io",
+      "Homepage, https://github.com/executablebooks/markdown-it-py"
+    ]
+  },
+  {
+    "name": "mdurl",
+    "version": "0.1.2",
+    "license_expression": null,
+    "license_metadata": null,
+    "project_urls": [
+      "Homepage, https://github.com/executablebooks/mdurl"
+    ]
+  },
+  {
+    "name": "mmh3",
+    "version": "5.3.1",
+    "license_expression": null,
+    "license_metadata": "MIT License\n\nCopyright (c) 2011-2026 Hajime Senuma\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "project_urls": [
+      "Homepage, https://pypi.org/project/mmh3/",
+      "Documentation, https://mmh3.readthedocs.io/",
+      "Repository, https://github.com/hajimes/mmh3",
+      "Changelog, https://github.com/hajimes/mmh3/blob/master/CHANGELOG.md",
+      "Bug Tracker, https://github.com/hajimes/mmh3/issues"
+    ]
+  },
+  {
+    "name": "pyarrow",
+    "version": "26.0.1",
+    "license_expression": "Apache-2.0",
+    "license_metadata": null,
+    "project_urls": [
+      "Homepage, https://arrow.apache.org/",
+      "Documentation, https://arrow.apache.org/docs/python",
+      "Repository, https://github.com/apache/arrow",
+      "Issues, https://github.com/apache/arrow/issues"
+    ]
+  },
+  {
+    "name": "pydantic",
+    "version": "2.14.3",
+    "license_expression": "MIT",
+    "license_metadata": null,
+    "project_urls": [
+      "Homepage, https://github.com/pydantic/pydantic",
+      "Documentation, https://pydantic.dev/docs/validation/latest/get-started/",
+      "Funding, https://github.com/sponsors/samuelcolvin",
+      "Source, https://github.com/pydantic/pydantic",
+      "Changelog, https://pydantic.dev/docs/validation/latest/get-started/changelog/"
+    ]
+  },
+  {
+    "name": "pydantic_core",
+    "version": "2.50.4",
+    "license_expression": "MIT",
+    "license_metadata": null,
+    "project_urls": [
+      "Funding, https://github.com/sponsors/samuelcolvin",
+      "Homepage, https://github.com/pydantic",
+      "Source, https://github.com/pydantic/pydantic/tree/main/pydantic-core"
+    ]
+  },
+  {
+    "name": "Pygments",
+    "version": "2.21.0",
+    "license_expression": "BSD-2-Clause",
+    "license_metadata": null,
+    "project_urls": [
+      "Homepage, https://pygments.org",
+      "Documentation, https://pygments.org/docs",
+      "Source, https://github.com/pygments/pygments",
+      "Bug Tracker, https://github.com/pygments/pygments/issues",
+      "Changelog, https://github.com/pygments/pygments/blob/master/CHANGES"
+    ]
+  },
+  {
+    "name": "pyiceberg",
+    "version": "0.10.0",
+    "license_expression": null,
+    "license_metadata": "Apache-2.0",
+    "project_urls": [
+      "Homepage, https://py.iceberg.apache.org/",
+      "Repository, https://github.com/apache/iceberg-python"
+    ]
+  },
+  {
+    "name": "pyiceberg-core",
+    "version": "0.6.0",
+    "license_expression": null,
+    "license_metadata": null,
+    "project_urls": []
+  },
+  {
+    "name": "pyparsing",
+    "version": "3.3.3",
+    "license_expression": "MIT",
+    "license_metadata": null,
+    "project_urls": [
+      "Documentation, https://pyparsing-docs.readthedocs.io/en/latest/",
+      "Homepage, https://github.com/pyparsing/pyparsing/",
+      "Source, https://github.com/pyparsing/pyparsing.git"
+    ]
+  },
+  {
+    "name": "pyroaring",
+    "version": "1.2.0",
+    "license_expression": null,
+    "license_metadata": "MIT",
+    "project_urls": []
+  },
+  {
+    "name": "python-dateutil",
+    "version": "4.0.0",
+    "license_expression": "BSD-3-Clause",
+    "license_metadata": null,
+    "project_urls": [
+      "Homepage, https://github.com/dateutil/dateutil",
+      "Documentation, https://dateutil.readthedocs.io/en/stable/",
+      "Source, https://github.com/dateutil/dateutil"
+    ]
+  },
+  {
+    "name": "requests",
+    "version": "2.34.2",
+    "license_expression": null,
+    "license_metadata": "Apache-2.0",
+    "project_urls": [
+      "Documentation, https://requests.readthedocs.io",
+      "Source, https://github.com/psf/requests"
+    ]
+  },
+  {
+    "name": "rich",
+    "version": "14.3.4",
+    "license_expression": null,
+    "license_metadata": "MIT",
+    "project_urls": [
+      "Documentation, https://rich.readthedocs.io/en/latest/",
+      "Homepage, https://github.com/Textualize/rich"
+    ]
+  },
+  {
+    "name": "sortedcontainers",
+    "version": "2.4.0",
+    "license_expression": null,
+    "license_metadata": "Apache 2.0",
+    "project_urls": []
+  },
+  {
+    "name": "SQLAlchemy",
+    "version": "2.1.8",
+    "license_expression": "MIT",
+    "license_metadata": null,
+    "project_urls": [
+      "Homepage, https://www.sqlalchemy.org",
+      "Documentation, https://docs.sqlalchemy.org",
+      "Changelog, https://docs.sqlalchemy.org/latest/changelog/index.html",
+      "Source Code, https://github.com/sqlalchemy/sqlalchemy",
+      "Issue Tracker, https://github.com/sqlalchemy/sqlalchemy/issues",
+      "Discussions, https://github.com/sqlalchemy/sqlalchemy/discussions"
+    ]
+  },
+  {
+    "name": "strictyaml",
+    "version": "1.7.3",
+    "license_expression": null,
+    "license_metadata": "MIT",
+    "project_urls": [
+      "homepage, https://hitchdev.com/strictyaml",
+      "documentation, https://hitchdev.com/strictyaml/using",
+      "repository, https://github.com/crdoconnor/strictyaml",
+      "changelog, https://hitchdev.com/strictyaml/changelog"
+    ]
+  },
+  {
+    "name": "tenacity",
+    "version": "9.2.1",
+    "license_expression": "Apache-2.0",
+    "license_metadata": null,
+    "project_urls": [
+      "Homepage, https://github.com/jd/tenacity",
+      "Documentation, https://tenacity.readthedocs.io",
+      "Source, https://github.com/jd/tenacity",
+      "Issues, https://github.com/jd/tenacity/issues",
+      "Changelog, https://tenacity.readthedocs.io/en/latest/changelog.html"
+    ]
+  },
+  {
+    "name": "typing-inspection",
+    "version": "0.4.5",
+    "license_expression": "MIT",
+    "license_metadata": null,
+    "project_urls": [
+      "Homepage, https://github.com/pydantic/typing-inspection",
+      "Documentation, https://pydantic.github.io/typing-inspection/dev/",
+      "Source, https://github.com/pydantic/typing-inspection",
+      "Changelog, https://github.com/pydantic/typing-inspection/blob/main/HISTORY.md"
+    ]
+  },
+  {
+    "name": "typing_extensions",
+    "version": "4.16.0",
+    "license_expression": "PSF-2.0",
+    "license_metadata": null,
+    "project_urls": [
+      "Bug Tracker, https://github.com/python/typing_extensions/issues",
+      "Changes, https://github.com/python/typing_extensions/blob/main/CHANGELOG.md",
+      "Documentation, https://typing-extensions.readthedocs.io/",
+      "Home, https://github.com/python/typing_extensions",
+      "Q & A, https://github.com/python/typing/discussions",
+      "Repository, https://github.com/python/typing_extensions"
+    ]
+  },
+  {
+    "name": "tzdata",
+    "version": "2026.6",
+    "license_expression": null,
+    "license_metadata": "Apache-2.0",
+    "project_urls": [
+      "Bug Reports, https://github.com/python/tzdata/issues",
+      "Source, https://github.com/python/tzdata",
+      "Documentation, https://tzdata.python.org"
+    ]
+  },
+  {
+    "name": "urllib3",
+    "version": "2.8.0",
+    "license_expression": "MIT",
+    "license_metadata": null,
+    "project_urls": [
+      "Changelog, https://github.com/urllib3/urllib3/blob/main/CHANGES.rst",
+      "Documentation, https://urllib3.readthedocs.io",
+      "Code, https://github.com/urllib3/urllib3",
+      "Issue tracker, https://github.com/urllib3/urllib3/issues",
+      "Security policy, https://urllib3.readthedocs.io/en/latest/security.html"
+    ]
+  }
+]

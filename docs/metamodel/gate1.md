@@ -18,11 +18,13 @@
 | `classification_overrides` | Tenant, project, resource, label | Live monotonic restrictions across all branches |
 | `audit_logs` | Sequence, tenant, canonical event, previous hash, hash | Append-only API, per-tenant verification chain |
 
+The v0.2 storage upgrade adds `storage_config` (backend and pinned absolute warehouse). File descriptors reference a tenant-scoped artifact and seal digest; application reads hydrate rows before applying current Markings. Database format 2 prevents the old application from silently reading file-backed revisions.
+
 ## Resource payloads in `revisions`
 
 | Manifest key | Payload |
 | --- | --- |
-| `dataset/<name>` | Scalar schema, primary key, row values and Markings, parent snapshot digest |
+| `dataset/<name>` | Scalar schema, primary key, parent snapshot digest; either inline rows/Markings or a sealed file-storage descriptor |
 | `type/<name>` | Properties, required flags, classification and interface names |
 | `interface/<name>` | Required property/type/Marking contract |
 | `object/<id>` | Logical identity, type, property values and object Marking |

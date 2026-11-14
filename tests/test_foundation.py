@@ -25,10 +25,11 @@ PUBLIC = {'properties': {'id': {'type': 'string', 'required': True},
 
 
 class FoundationTest(unittest.TestCase):
+    storage_backend = None
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.db = Path(self.temp.name) / 's2.db'
-        self.service = Service(self.db)
+        self.service = Service(self.db, storage_backend=self.storage_backend)
         self.admin = self.service.bootstrap('A', 3, ['ENG'])
         self.token = self.admin['token']
         self.project = self.call('projects.create', name='Engineering')
