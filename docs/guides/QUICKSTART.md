@@ -36,7 +36,7 @@ S2_REQUIRE_STORAGE_TESTS=1 .venv/bin/python -m unittest discover -s tests -v
 python3 tooling/check_headers.py
 ```
 
-The v0.5.1 baseline is **482 passing tests**, with no skipped file-storage suites. See the [pipeline validation record](../operations/pipeline-merge-validation-2026-11-18.md).
+The v0.6.0 baseline is **545 passing tests**, with no skipped file-storage suites. See the [pipeline validation record](../operations/orchestration-validation-2026-11-18.md).
 
 ## 4. Demonstrate Iceberg and verify artifacts
 
@@ -142,3 +142,11 @@ Expected: two input rows, one output row, one materialized object, valid audit a
 ```
 
 Expected: same object ID, reading 40, inspection preserved, source unchanged, replay equality and valid audit.
+
+## Pipeline-chain demo
+
+```bash
+.venv/bin/python tooling/orchestration_demo.py --storage iceberg
+```
+
+Expected: initial quality rejection, then order `z-select`, `a-validate`, one object, matching replay and valid audit.

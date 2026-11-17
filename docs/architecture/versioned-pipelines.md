@@ -73,7 +73,7 @@ Defining the first pipeline advances the local catalog format to **6**, in the s
 
 ## Bounds and remaining work
 
-Input and existing output snapshots are limited to 1,000 rows each. This is a synchronous single-input/single-output engine. Multiple stages can be run explicitly; there is no DAG scheduler, automatic dependency execution, distributed worker, retry queue, visual Pipeline Builder, arbitrary user code, aggregation, remote compute or scale claim. Provenance cycles detected through materialized dependencies are rejected; this is not a general definition-graph planner.
+Input and existing output snapshots are limited to 1,000 rows each. This is a synchronous single-input/single-output engine. v0.6.0 adds [synchronous dependency-chain execution](pipeline-orchestration.md). Background scheduling, distributed workers, retry queues, visual Pipeline Builder, arbitrary code, aggregation and remote compute remain open. Provenance cycles detected through materialized dependencies are rejected; this is not a general definition-graph planner.
 
 For RCI/DRDO laboratory work, this slice can select accepted engineering records, project approved fields, enforce basic reading limits and feed traceable objects. Customer schemas, quality thresholds and classification rules remain separately agreed. Production qualification and full platform parity remain open.
 

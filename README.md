@@ -6,7 +6,7 @@
 
 **Governed data · Versioned Ontology · Transactional Actions**
 
-`v0.5.1` · `Gate 1 reference foundation` · `482 tests passed locally` · `Proprietary commercial software`
+`v0.6.0` · `Gate 1 reference foundation` · `545 tests passed locally` · `Proprietary commercial software`
 
 [Architecture](docs/architecture/platform-overview.md) · [Tech stack](docs/TECH_STACK.md) · [Technical document](docs/TECHNICAL_OVERVIEW.md) · [Quick start](docs/guides/QUICKSTART.md) · [Documents & presentations](docs/resources/README.md)
 
@@ -26,7 +26,7 @@ The long-term architecture targets capabilities associated with **Palantir Found
 
 ## Current milestone
 
-| Area | Available in v0.5.1 |
+| Area | Available in v0.6.0 |
 | --- | --- |
 | **Governance** | Tenant/project isolation, roles, classification levels and compartments, property redaction and live restrictions across branches |
 | **Versioned data** | JSON, local Parquet and local Iceberg v2 snapshots; staged APPEND/UPDATE/DELETE transactions; retry-safe COMMIT |
@@ -45,7 +45,7 @@ The long-term architecture targets capabilities associated with **Palantir Found
 
 **Reviewed merge update:** source scenarios can now publish coherent bindings and derived objects through a preview hash and atomic two-parent commit. Same-object conflicts remain explicit. See [merge contracts](docs/architecture/reviewed-merges.md).
 
-**Migration capability:** compatible schema adoption and reviewed source remapping now publish bindings and objects atomically. The current full suite has 482 passing tests. See [migration contracts](docs/architecture/binding-migrations.md).
+**Migration capability:** compatible schema adoption and reviewed source remapping now publish bindings and objects atomically. The current full suite has 545 passing tests. See [migration contracts](docs/architecture/binding-migrations.md).
 
 ## Architecture at a glance
 
@@ -117,7 +117,7 @@ S2_REQUIRE_STORAGE_TESTS=1 .venv/bin/python -m unittest discover -s tests -v
 .venv/bin/python tooling/s2.py --db .local/iceberg-demo.db storage-report
 ```
 
-Expected results: **482 passing tests**, Action status `COMMITTED`, audit `valid: true` and an empty `broken_references` list. A fresh successful demo also has no unreferenced artifacts. Each demo creates a new synthetic tenant; it sends no external commands and prints no authentication token.
+Expected results: **545 passing tests**, Action status `COMMITTED`, audit `valid: true` and an empty `broken_references` list. A fresh successful demo also has no unreferenced artifacts. Each demo creates a new synthetic tenant; it sends no external commands and prints no authentication token.
 
 For the dependency-free JSON demonstration:
 
@@ -159,9 +159,17 @@ Reviewed projection/filter runs now publish pinned output snapshots with range/c
 .venv/bin/python tooling/pipeline_demo.py --storage iceberg --merge
 ```
 
+## Dependency-aware pipeline chains
+
+Reviewed chains simulate downstream outputs in memory and execute in dependency order within one catalog transaction. Later-stage failures roll back earlier stages. See [contract](docs/architecture/pipeline-orchestration.md).
+
+```bash
+.venv/bin/python tooling/orchestration_demo.py --storage iceberg
+```
+
 ## Next development milestone
 
-**Pipeline orchestration and broader transforms.** Bounded materialization, retained-absence reconciliation and reviewed compatible binding migration are implemented. General merge resolution, migration of missing objects, general schema evolution and scheduled/remote ingestion remain next steps. See [the implemented contract](docs/architecture/ontology-bindings.md).
+**Broader transforms and operational interfaces.** Bounded materialization, retained-absence reconciliation and reviewed compatible binding migration are implemented. General merge resolution, migration of missing objects, general schema evolution and scheduled/remote ingestion remain next steps. See [the implemented contract](docs/architecture/ontology-bindings.md).
 
 Subsequent milestones cover connector/pipeline execution, typed SDKs, operational application builders and governed AI. The [roadmap](docs/ROADMAP.md) distinguishes these planned capabilities from today's executable code.
 

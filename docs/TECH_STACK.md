@@ -74,3 +74,7 @@ CSV/JSON intake uses the Python standard library (`csv`, `json`, `hashlib`) and 
 ## Pipeline runtime (v0.5.0)
 
 Synchronous Python standard-library projection/filter engine, existing SQLite publication boundary and JSON/Parquet/Iceberg snapshot storage. No new dependencies, arbitrary code evaluation or distributed compute engine.
+
+## Chain execution (v0.6.0)
+
+Python standard-library in-memory overlays and serial execution within the existing SQLite Service transaction. No new dependencies or distributed scheduler.

@@ -63,3 +63,7 @@ The operational `ingestion_runs` table stores tenant/branch/run/actor, idempoten
 ## Versioned pipelines and runs (v0.5.0)
 
 `pipeline/<name>` manifest resources pin a transform definition and schema hashes. Output snapshots carry `source_pipeline` provenance/dependencies. Operational `pipeline_runs` receipts are keyed by `(tenant,branch,idem)` and uniquely by `(tenant,branch,id)`; actor-scoped retrieval rechecks current policy. First definition advances catalog format to 6. See [details](../architecture/versioned-pipelines.md).
+
+## Chain receipts (v0.6.0)
+
+`orchestration_runs` stores tenant, branch, ID, actor, idempotency key, request hash and aggregate result. Stage results pin actual revisions and commits. Format remains 6. See [contract](../architecture/pipeline-orchestration.md).

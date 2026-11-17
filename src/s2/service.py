@@ -8,6 +8,7 @@ import sqlite3
 from s2_platform import Context, S2Error, Forbidden, Conflict, NotFound, canonical, new_id, marking, dominates
 from s2_connector_fabric.ingestion import Ingestion
 from s2_compute_pipelines.pipelines import Pipelines
+from s2_compute_pipelines.orchestration import Orchestration
 from s2_catalog_storage.store import Store
 from s2_catalog_storage.datasets import Datasets
 from s2_catalog_storage.merges import ReviewedMerges
@@ -24,6 +25,7 @@ class Service:
         self.kernel = Kernel(self.store, self.security)
         self.datasets = Datasets(self.store, self.security, self.kernel)
         self.pipelines = Pipelines(self.store, self.security, self.kernel)
+        self.orchestration = Orchestration(self.store, self.security, self.kernel, self.pipelines)
         self.ingestion = Ingestion(self.store, self.security, self.kernel, self.datasets)
         self.actions = Actions(self.store, self.security, self.kernel)
         self.bindings = Bindings(self.store, self.security, self.kernel)
@@ -43,6 +45,9 @@ class Service:
             'datasets.stage': ('write', self.datasets.stage),
             'datasets.commit': ('write', self.datasets.commit),
             'datasets.abort': ('write', self.datasets.abort),
+            'orchestration.preview': ('write', self.orchestration.preview),
+            'orchestration.run': ('write', self.orchestration.run),
+            'orchestration.get': ('read', self.orchestration.get),
             'pipelines.define': ('admin', self.pipelines.define),
             'pipelines.preview': ('write', self.pipelines.preview),
             'pipelines.run': ('write', self.pipelines.run),
@@ -99,6 +104,11 @@ class Service:
                        'idem TEXT NOT NULL, request_hash TEXT NOT NULL, result TEXT NOT NULL, '
                        'PRIMARY KEY(tenant,branch,idem), UNIQUE(tenant,branch,id))')
 
+            db.execute('CREATE TABLE IF NOT EXISTS orchestration_runs('
+                       'tenant TEXT NOT NULL, branch TEXT NOT NULL, id TEXT NOT NULL, actor TEXT NOT NULL, '
+                       'idem TEXT NOT NULL, request_hash TEXT NOT NULL, result TEXT NOT NULL, '
+                       'PRIMARY KEY(tenant,branch,idem), UNIQUE(tenant,branch,id))')
+
     def bootstrap(self, name, clearance=0, compartments=None):
         """Host-administrator CLI only. Deliberately absent from the network API."""
         if not isinstance(name, str) or not name.strip():
@@ -133,7 +143,7 @@ class Service:
                     if expected and expected != branch['head']:
                         # Idempotent transaction/invocation retries validate their own pinned base.
                         if operation not in {'datasets.begin', 'actions.submit', 'bindings.materialize', 'bindings.migrate',
-                                              'branches.merge_reviewed', 'ingestion.apply', 'pipelines.run'}:
+                                              'branches.merge_reviewed', 'ingestion.apply', 'pipelines.run', 'orchestration.run'}:
                             raise Conflict('Stale branch head')
                 result = handler(db, ctx, **params)
                 self.security.audit(db, ctx, operation, params.get('branch', ctx.tenant),

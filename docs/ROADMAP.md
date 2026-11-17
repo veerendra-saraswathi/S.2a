@@ -2,7 +2,7 @@
 
 [Repository](../README.md) · [Documentation index](README.md) · [Current implementation matrix](parity-matrix/gate1.md)
 
-This roadmap describes the engineering sequence for the proprietary S2 enterprise platform. It is not a delivery-date, budget or production-acceptance commitment. The current baseline is **v0.5.1**, validated locally with 482 tests.
+This roadmap describes the engineering sequence for the proprietary S2 enterprise platform. It is not a delivery-date, budget or production-acceptance commitment. The current baseline is **v0.6.0**, validated locally with 545 tests.
 
 ## Delivered foundation
 
@@ -61,3 +61,7 @@ Versioned projection/filter definitions, reviewed replacement runs, row-count/ra
 ## v0.5.1 — Reviewed pipeline merges delivered
 
 The reviewed merge API now checks pipeline definitions, source/output pins, actual transform results, health expectations and bound objects before publication. Legacy merge remains guarded. Scheduling, automated rebuilds and general conflict resolution remain open. See [contract](architecture/pipeline-merges.md).
+
+## v0.6.0 — Dependency-chain execution delivered
+
+Bounded target selection, upstream closure, in-memory previews and synchronous atomic chains are implemented. Background scheduling, workers and broader transforms remain open. See [contract](architecture/pipeline-orchestration.md).

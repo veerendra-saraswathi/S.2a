@@ -78,3 +78,7 @@ The JSON envelope schema documents operation names, required fields and unknown-
 ## Pipeline merge proof (v0.5.1)
 
 `branches.merge_preview` adds a `pipelines` proof list. Existing request parameters are unchanged. Acquire a fresh preview after upgrading. See [contract](../architecture/pipeline-merges.md).
+
+## Dependency chains (v0.6.0)
+
+`orchestration.preview`, `orchestration.run`, `orchestration.get`: see [parameters and semantics](../architecture/pipeline-orchestration.md).
