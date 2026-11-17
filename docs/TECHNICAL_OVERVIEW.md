@@ -5,11 +5,11 @@
 | Document control | Value |
 | --- | --- |
 | Product | Samanvaya 2 — Enterprise Data Operating System and Operational Ontology Platform |
-| Version covered | 0.3.3 |
+| Version covered | 0.4.0 |
 | Review date | 17 November 2026 |
 | Maturity | Executable Gate 1 reference foundation |
 | Ownership | Veerendra Kiran Bidarkota — Proprietary Commercial Software |
-| Validation baseline | 296 local tests; successful combined Iceberg reconciliation and migration demo |
+| Validation baseline | 359 local tests; successful combined Iceberg reconciliation and migration demo |
 
 ## 1. Purpose and current scope
 
@@ -122,3 +122,7 @@ Administrators can preview and apply compatible mapping/schema changes with an e
 ## Reviewed binding-aware merges
 
 The administrator previews exact cross-resource changes, then publishes the reviewed plan against pinned source and target heads. Current authorization and binding coherence are revalidated. Same-object conflicts are rejected. See [detailed contract](architecture/reviewed-merges.md).
+
+## Governed file intake
+
+The connector fabric now validates local CSV/JSON records against explicit dataset schemas and publishes reviewed APPEND batches atomically with ingestion receipts. Materialization into Ontology objects remains explicit. See [technical contract](architecture/file-ingestion.md).

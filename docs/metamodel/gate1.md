@@ -55,3 +55,7 @@ ResourceRevision-backed transforms, pipeline DAGs/runs, source bindings, checkpo
 ## Reviewed merge replay state (v0.3.3)
 
 `branch_merges` is keyed by `(tenant, branch, idem)` and stores a request hash and committed result. The hash binds actor, source, pinned heads, reason and reviewed plan hash. It is operational replay state, not a branch-manifest resource. Target commit, replay row and success audit publish in the same local transaction. Merge commits retain both parents; source commits and immutable revisions are reused.
+
+## Ingestion receipts (v0.4.0)
+
+The operational `ingestion_runs` table stores tenant/branch/run/actor, idempotency key, request hash and committed receipt. Publication and receipt creation share the dataset transaction and audit boundary. See [contract](../architecture/file-ingestion.md).

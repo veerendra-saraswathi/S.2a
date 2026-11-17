@@ -6,6 +6,7 @@ import inspect
 import json
 import sqlite3
 from s2_platform import Context, S2Error, Forbidden, Conflict, NotFound, canonical, new_id, marking, dominates
+from s2_connector_fabric.ingestion import Ingestion
 from s2_catalog_storage.store import Store
 from s2_catalog_storage.datasets import Datasets
 from s2_catalog_storage.merges import ReviewedMerges
@@ -21,6 +22,7 @@ class Service:
         self.security = Security()
         self.kernel = Kernel(self.store, self.security)
         self.datasets = Datasets(self.store, self.security, self.kernel)
+        self.ingestion = Ingestion(self.store, self.security, self.kernel, self.datasets)
         self.actions = Actions(self.store, self.security, self.kernel)
         self.bindings = Bindings(self.store, self.security, self.kernel)
         self.reviewed_merges = ReviewedMerges(self.store, self.security, self.kernel, self.bindings, self.check_project)
@@ -39,6 +41,9 @@ class Service:
             'datasets.stage': ('write', self.datasets.stage),
             'datasets.commit': ('write', self.datasets.commit),
             'datasets.abort': ('write', self.datasets.abort),
+            'ingestion.preview': ('write', self.ingestion.preview),
+            'ingestion.apply': ('write', self.ingestion.apply),
+            'ingestion.get': ('read', self.ingestion.get),
             'datasets.read': ('read', self.datasets.read),
             'ontology.define': ('write', self.define_type),
             'ontology.interface': ('write', self.define_interface),
@@ -78,6 +83,11 @@ class Service:
                        'tenant TEXT NOT NULL, branch TEXT NOT NULL, idem TEXT NOT NULL, '
                        'request_hash TEXT NOT NULL, result TEXT NOT NULL, PRIMARY KEY(tenant,branch,idem))')
 
+            db.execute('CREATE TABLE IF NOT EXISTS ingestion_runs('
+                       'tenant TEXT NOT NULL, branch TEXT NOT NULL, id TEXT NOT NULL, actor TEXT NOT NULL, '
+                       'idem TEXT NOT NULL, request_hash TEXT NOT NULL, result TEXT NOT NULL, '
+                       'PRIMARY KEY(tenant,branch,idem), UNIQUE(tenant,branch,id))')
+
     def bootstrap(self, name, clearance=0, compartments=None):
         """Host-administrator CLI only. Deliberately absent from the network API."""
         if not isinstance(name, str) or not name.strip():
@@ -112,12 +122,12 @@ class Service:
                     if expected and expected != branch['head']:
                         # Idempotent transaction/invocation retries validate their own pinned base.
                         if operation not in {'datasets.begin', 'actions.submit', 'bindings.materialize', 'bindings.migrate',
-                                              'branches.merge_reviewed'}:
+                                              'branches.merge_reviewed', 'ingestion.apply'}:
                             raise Conflict('Stale branch head')
                 result = handler(db, ctx, **params)
                 self.security.audit(db, ctx, operation, params.get('branch', ctx.tenant),
                                     {'result': 'success', 'commit': result.get('commit'),
-                                     'transaction': result.get('transaction'), 'invocation': result.get('invocation')})
+                                     'run': result.get('run'), 'transaction': result.get('transaction'), 'invocation': result.get('invocation')})
                 return result
         except (S2Error, sqlite3.IntegrityError) as exc:
             if ctx is not None:

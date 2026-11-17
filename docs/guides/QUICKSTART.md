@@ -36,7 +36,7 @@ S2_REQUIRE_STORAGE_TESTS=1 .venv/bin/python -m unittest discover -s tests -v
 python3 tooling/check_headers.py
 ```
 
-The v0.3.3 baseline is **296 passing tests**, with no skipped file-storage suites. See the [binding validation record](../operations/merge-validation-2026-11-17.md).
+The v0.4.0 baseline is **359 passing tests**, with no skipped file-storage suites. See the [binding validation record](../operations/ingestion-validation-2026-11-18.md).
 
 ## 4. Demonstrate Iceberg and verify artifacts
 
@@ -118,3 +118,11 @@ This uses a disposable database. Expected: `replay_same_result: true`, `approved
 For retained absence and source return, run `.venv/bin/python tooling/bindings_demo.py --storage iceberg --reconcile`. Expected final reading: 30, status: inspected, presence: PRESENT, with MISSING recorded earlier in the demonstration.
 
 For the combined migration demo, add `--migrate` to the command above. It adds reading_copy and review_note, preserves inspected status and verifies replay. Successful migration uses catalog format 5; see [compatibility guidance](../architecture/binding-migrations.md).
+
+## File-ingestion demonstration
+
+```bash
+.venv/bin/python tooling/ingestion_demo.py --storage iceberg
+```
+
+Expected: two materialized objects, replay equality, valid audit and no broken storage references. Real-file commands are documented in [file ingestion](../architecture/file-ingestion.md).

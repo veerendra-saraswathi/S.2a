@@ -15,3 +15,7 @@ The Python package in this subsystem, where present, is the executable Gate 1 im
 - `checkpoints/`
 
 Copyright (c) 2026 Veerendra Kiran Bidarkota. All Rights Reserved — Proprietary Commercial Software.
+
+## Executable local intake (v0.4.0)
+
+`s2_connector_fabric/ingestion.py` implements bounded CSV/JSON preview, atomic APPEND and receipts through the existing dataset engine. See [contract](../../docs/architecture/file-ingestion.md). Other connector areas remain scaffolds.

@@ -2,7 +2,7 @@
 
 | Subsystem | This delivery | Remaining |
 | --- | --- | --- |
-| Connector fabric | Ownership scaffold | Connectors, CDC, offline agents, schema inference, HyperAuto |
+| Connector fabric | Bounded local CSV/JSON preview, schema validation, atomic APPEND, receipts and replay | Remote connectors, CDC, offline agents, schema inference, HyperAuto, scheduling |
 | Catalog storage | JSON/Parquet/Iceberg snapshots, dataset transactions, manifests, forks, conservative merges, reviewed binding-aware publication, read-only recovery inventory | Distributed/object-store adapters, GC/retention, general merge bases and row conflicts, protected promotion |
 | Compute pipelines | Ownership scaffold | Visual DAG, compiler, workers, scheduled source integration, health checks |
 | Ontology kernel | Types/interfaces/links, scalar validation, object revisions, governed reads, bounded snapshot bindings, provenance, retained-absence reconciliation and compatible binding migration | General schema/identity migration, hard-deletion semantics and merge reconciliation, stable schema IDs/renames, indexed query language, spatial/media/time-series, scale |

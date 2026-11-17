@@ -66,3 +66,7 @@ The JSON envelope schema documents operation names, required fields and unknown-
 ## Reviewed branch merge (v0.3.3)
 
 `branches.merge_preview` requires admin access and `branch`, `source`, `expected_head`, `expected_source`, `reason`. It returns pinned commits, resource revision changes and a `plan_hash`. `branches.merge_reviewed` takes those same parameters plus `plan_hash` and `idempotency_key`. Reuse the exact request on retry. Both heads and current effective policies are checked before initial publication. Replays recheck current access. See [scope, errors and limits](../architecture/reviewed-merges.md).
+
+## File intake (v0.4.0)
+
+`ingestion.preview`, `ingestion.apply` and `ingestion.get` are documented in [file ingestion](../architecture/file-ingestion.md), including exact parameters, classifications, replay and limits.

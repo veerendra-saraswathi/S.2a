@@ -6,7 +6,7 @@
 
 **Governed data · Versioned Ontology · Transactional Actions**
 
-`v0.3.3` · `Gate 1 reference foundation` · `296 tests passed locally` · `Proprietary commercial software`
+`v0.4.0` · `Gate 1 reference foundation` · `359 tests passed locally` · `Proprietary commercial software`
 
 [Architecture](docs/architecture/platform-overview.md) · [Tech stack](docs/TECH_STACK.md) · [Technical document](docs/TECHNICAL_OVERVIEW.md) · [Quick start](docs/guides/QUICKSTART.md) · [Documents & presentations](docs/resources/README.md)
 
@@ -26,7 +26,7 @@ The long-term architecture targets capabilities associated with **Palantir Found
 
 ## Current milestone
 
-| Area | Available in v0.3.3 |
+| Area | Available in v0.4.0 |
 | --- | --- |
 | **Governance** | Tenant/project isolation, roles, classification levels and compartments, property redaction and live restrictions across branches |
 | **Versioned data** | JSON, local Parquet and local Iceberg v2 snapshots; staged APPEND/UPDATE/DELETE transactions; retry-safe COMMIT |
@@ -39,13 +39,13 @@ The long-term architecture targets capabilities associated with **Palantir Found
 
 **Validation baseline — 15 November 2026:** 104 tests passed locally across JSON, Parquet and Iceberg. The Iceberg demo completed an internal Action, verified its audit chain and reported no broken or unreferenced artifacts. See the [validation record](docs/operations/storage-validation.md) for coverage and limits. This is functional validation, not a performance or production-readiness claim.
 
-**Bindings validation — 17 November 2026:** 197 tests passed locally with storage suites required: the original 104 plus 60 binding tests across JSON, Parquet and Iceberg. See [binding contracts](docs/architecture/ontology-bindings.md) and the [session checkpoint](docs/operations/session-checkpoint-2026-11-17.md).
+**Bindings validation — 17 November 2026:** 164 tests passed locally with storage suites required: the original 104 plus 60 binding tests across JSON, Parquet and Iceberg. See [binding contracts](docs/architecture/ontology-bindings.md) and the [session checkpoint](docs/operations/session-checkpoint-2026-11-17.md).
 
 **Reconciliation update:** explicit administrator-reviewed retention of missing source objects and same-identity source return are now available. That milestone passed 197 tests, including 33 reconciliation tests. See [source reconciliation](docs/architecture/source-reconciliation.md).
 
 **Reviewed merge update:** source scenarios can now publish coherent bindings and derived objects through a preview hash and atomic two-parent commit. Same-object conflicts remain explicit. See [merge contracts](docs/architecture/reviewed-merges.md).
 
-**Migration capability:** compatible schema adoption and reviewed source remapping now publish bindings and objects atomically. The full suite has 296 passing tests. See [migration contracts](docs/architecture/binding-migrations.md).
+**Migration capability:** compatible schema adoption and reviewed source remapping now publish bindings and objects atomically. The current full suite has 359 passing tests. See [migration contracts](docs/architecture/binding-migrations.md).
 
 ## Architecture at a glance
 
@@ -53,6 +53,8 @@ The long-term architecture targets capabilities associated with **Palantir Found
 flowchart TD
     Clients["CLI and development API"] --> Service["S2 application boundary"]
     Service --> Gov["Identity, Markings and audit"]
+    Service --> Intake["CSV / JSON intake"]
+    Intake --> Catalog
     Service --> Catalog["Catalog and branches"]
     Service --> Ontology["Ontology and objects"]
     Service --> Actions["Actions and approvals"]
@@ -70,11 +72,11 @@ The application boundary validates current authorization and coordinates the tra
 
 ## Ten-subsystem platform
 
-Four subsystem packages currently contain executable foundation code. The remaining six contain architecture scaffolds for subsequent delivery.
+Five subsystem packages currently contain executable foundation code. The remaining five contain architecture scaffolds for subsequent delivery.
 
 | Subsystem | Responsibility | Status |
 | --- | --- | --- |
-| [Connector Fabric](subsystems/s2-connector-fabric/README.md) | Enterprise connectors, CDC, offline agents and automated schema discovery | Planned |
+| [Connector Fabric](subsystems/s2-connector-fabric/README.md) | Enterprise connectors, CDC, offline agents and automated schema discovery | Local CSV/JSON intake implemented; broader connectors planned |
 | [Catalog & Storage](subsystems/s2-catalog-storage/README.md) | Dataset transactions, snapshots, branch manifests and publication | Implemented reference |
 | [Compute & Pipelines](subsystems/s2-compute-pipelines/README.md) | Pipeline DAGs, transformation execution and Data Health | Planned |
 | [Ontology Kernel](subsystems/s2-ontology-kernel/README.md) | Types, interfaces, links, object state and the OSv2 foundation | Implemented reference |
@@ -113,7 +115,7 @@ S2_REQUIRE_STORAGE_TESTS=1 .venv/bin/python -m unittest discover -s tests -v
 .venv/bin/python tooling/s2.py --db .local/iceberg-demo.db storage-report
 ```
 
-Expected results: **296 passing tests**, Action status `COMMITTED`, audit `valid: true` and an empty `broken_references` list. A fresh successful demo also has no unreferenced artifacts. Each demo creates a new synthetic tenant; it sends no external commands and prints no authentication token.
+Expected results: **359 passing tests**, Action status `COMMITTED`, audit `valid: true` and an empty `broken_references` list. A fresh successful demo also has no unreferenced artifacts. Each demo creates a new synthetic tenant; it sends no external commands and prints no authentication token.
 
 For the dependency-free JSON demonstration:
 
@@ -139,9 +141,17 @@ Initial installation of the storage dependencies requires package access. Once i
 
 [Browse the documentation index →](docs/README.md)
 
+## Governed file ingestion
+
+Local CSV/JSON intake now supports schema validation, rejected-record reports, reviewed atomic APPEND, receipt lookup and replay safety. See [ingestion contract](docs/architecture/file-ingestion.md).
+
+```bash
+.venv/bin/python tooling/ingestion_demo.py --storage iceberg
+```
+
 ## Next development milestone
 
-**Broader schema evolution and ingestion.** Bounded materialization, retained-absence reconciliation and reviewed compatible binding migration are implemented. General merge resolution, migration of missing objects, general schema evolution and automatic ingestion remain next steps. See [the implemented contract](docs/architecture/ontology-bindings.md).
+**Connector expansion and pipeline execution.** Bounded materialization, retained-absence reconciliation and reviewed compatible binding migration are implemented. General merge resolution, migration of missing objects, general schema evolution and scheduled/remote ingestion remain next steps. See [the implemented contract](docs/architecture/ontology-bindings.md).
 
 Subsequent milestones cover connector/pipeline execution, typed SDKs, operational application builders and governed AI. The [roadmap](docs/ROADMAP.md) distinguishes these planned capabilities from today's executable code.
 

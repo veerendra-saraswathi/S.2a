@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 from s2.service import Service
+from s2_platform import S2Error
 
 
 def main():
@@ -22,11 +23,44 @@ def main():
     serve.add_argument('--port', type=int, default=8080)
     commands.add_parser('demo')
     commands.add_parser('storage-report')
+    for name in ('ingest-preview', 'ingest-apply'):
+        ingest = commands.add_parser(name)
+        ingest.add_argument('--file', required=True)
+        ingest.add_argument('--format', choices=['csv', 'json'], required=True)
+        ingest.add_argument('--branch', required=True)
+        ingest.add_argument('--expected-head', required=True)
+        ingest.add_argument('--dataset', required=True)
+        ingest.add_argument('--marking', default='{}', help='JSON classification label')
+        if name == 'ingest-apply':
+            ingest.add_argument('--plan-hash', required=True)
+            ingest.add_argument('--key', required=True)
     args = parser.parse_args()
     os.umask(0o077)
     Path(args.db).parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     service = Service(args.db, storage_backend=args.storage, warehouse=args.warehouse)
-    if args.command == 'bootstrap':
+    if args.command.startswith('ingest-'):
+        token = os.environ.get('S2_TOKEN')
+        if not token:
+            parser.error('Set S2_TOKEN to an authorized token; it is not accepted on the command line')
+        try:
+            with Path(args.file).open('rb') as file:
+                raw = file.read(1048577)
+            if len(raw) > 1048576:
+                raise S2Error('File exceeds 1 MiB')
+            params = dict(branch=args.branch, expected_head=args.expected_head, dataset=args.dataset,
+                          content=raw.decode('utf-8'), format=args.format, source_name=Path(args.file).name,
+                          label=json.loads(args.marking))
+            operation = 'ingestion.preview'
+            if args.command == 'ingest-apply':
+                operation = 'ingestion.apply'
+                params.update(plan_hash=args.plan_hash, idempotency_key=args.key)
+            result = service.call(token, operation, **params)
+        except (OSError, UnicodeError, ValueError, S2Error) as exc:
+            parser.exit(2, f'Ingestion failed: {type(exc).__name__}\n')
+        print(json.dumps(result, indent=2))
+        if not result['can_publish']:
+            raise SystemExit(1)
+    elif args.command == 'bootstrap':
         result = service.bootstrap(args.tenant, args.clearance, args.compartment)
         print(json.dumps(result, indent=2))
     elif args.command == 'storage-report':

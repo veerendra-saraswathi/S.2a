@@ -30,14 +30,15 @@ The application resolves identity from credentials, checks current permissions a
 
 | Executable package | Owns | Depends on |
 | --- | --- | --- |
+| `s2_connector_fabric` | Bounded CSV/JSON preview, schema checks, APPEND and receipts | Catalog transactions, Ontology validation and governance |
 | `s2_catalog_storage` | Dataset revisions, transactions, manifests, branch publication and file artifacts | Shared platform primitives and storage dependencies |
 | `s2_governance_control` | Current principal authorization, roles, Markings and audit | Catalog connection provided by the application boundary |
 | `s2_ontology_kernel` | Schema validation, interfaces, objects, links and filtered reads | Catalog and governance primitives |
 | `s2_kinetic_actions` | Action definitions, approval decisions, effect validation and object edits | Ontology, governance and catalog transaction |
-| `s2` | CLI, HTTP adapter, operation registry and project/branch orchestration | The four executable subsystems |
+| `s2` | CLI, HTTP adapter, operation registry and project/branch orchestration | The five executable subsystems |
 | `s2_platform` | Context, errors, canonical serialization and Marking primitives | Standard library |
 
-The six remaining named subsystems are reserved for connectors, pipelines, SDK generation, applications, analytics and AI. The [status matrix](../parity-matrix/gate1.md) tracks their remaining implementation scope.
+The five remaining named subsystems are reserved for pipelines, SDK generation, applications, analytics and AI. The [status matrix](../parity-matrix/gate1.md) tracks their remaining implementation scope.
 
 ## Branch-aware state
 

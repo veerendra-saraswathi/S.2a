@@ -66,3 +66,7 @@ These are architectural candidates or requirements, not installed capabilities o
 | Deployment | Cloud SaaS, dedicated VPC and air-gapped release bundles | Local single-node runtime |
 
 S2's core implementation is proprietary. Dependencies retain their upstream licenses; adding a component requires dependency review and updated notices, rather than applying S2 ownership headers to upstream code.
+
+## Local ingestion runtime (v0.4.0)
+
+CSV/JSON intake uses the Python standard library (`csv`, `json`, `hashlib`) and existing transactional dataset/storage backends. No additional dependencies are introduced.
