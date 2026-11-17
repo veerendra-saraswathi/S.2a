@@ -2,7 +2,7 @@
 
 [Repository](../README.md) · [Documentation index](README.md) · [Current implementation matrix](parity-matrix/gate1.md)
 
-This roadmap describes the engineering sequence for the proprietary S2 enterprise platform. It is not a delivery-date, budget or production-acceptance commitment. The current baseline is **v0.6.0**, validated locally with 545 tests.
+This roadmap describes the engineering sequence for the proprietary S2 enterprise platform. It is not a delivery-date, budget or production-acceptance commitment. The current baseline is **v0.7.0**, validated locally with 590 tests.
 
 ## Delivered foundation
 
@@ -65,3 +65,7 @@ The reviewed merge API now checks pipeline definitions, source/output pins, actu
 ## v0.6.0 — Dependency-chain execution delivered
 
 Bounded target selection, upstream closure, in-memory previews and synchronous atomic chains are implemented. Background scheduling, workers and broader transforms remain open. See [contract](architecture/pipeline-orchestration.md).
+
+## v0.7.0 — Governed lineage inspection delivered
+
+A read-only graph traces recorded object/binding/pipeline/dataset revisions with current access checks. Graphical UI, Action/model/widget lineage and raw-file receipt traversal remain open. See [contract](architecture/governed-lineage.md).

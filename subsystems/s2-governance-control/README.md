@@ -16,3 +16,5 @@ The Python package in this subsystem, where present, is the executable Gate 1 im
 - `metering/`
 
 Copyright (c) 2026 Veerendra Kiran Bidarkota. All Rights Reserved — Proprietary Commercial Software.
+
+In v0.7.0, `lineage.py` provides read-only, bounded, permission-checked recorded provenance. See [contract](../../docs/architecture/governed-lineage.md). Graphical and full enterprise lineage coverage remain planned.

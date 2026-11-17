@@ -11,6 +11,6 @@
 | Workshop/Slate | Ownership scaffold | UI builders, stateful widgets and isolated custom runtime |
 | Contour/Quiver | Ownership scaffold | Tabular and object/time-series analytical tools |
 | AIP | Ownership scaffold | Logic, model routing, governed tools, Automate and Evals |
-| Governance | Role/project checks, Markings/floors, hash-chained audit | OIDC/ABAC policies, lineage graph, control panel, metering, signed licensing and independent audit anchors |
+| Governance | Role/project checks, Markings/floors, hash-chained audit and bounded recorded-provenance graph API | OIDC/ABAC policies, graphical/full lineage coverage, control panel, metering, signed licensing and independent audit anchors |
 
 No full architectural/feature/performance parity claim is made by this delivery. The approved full-platform scope remains the engineering target. The first slice is executable and tested, but Gate 1 production qualification remains open.

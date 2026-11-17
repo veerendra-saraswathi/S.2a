@@ -1,6 +1,6 @@
 # Samanvaya 2 documentation
 
-**Version covered:** v0.6.0 · **Reviewed:** 17 November 2026 · **Stage:** Gate 1 reference foundation.
+**Version covered:** v0.7.0 · **Reviewed:** 17 November 2026 · **Stage:** Gate 1 reference foundation.
 
 [Repository landing page](../README.md) · [Quick start](guides/QUICKSTART.md) · [Documents & presentations](resources/README.md)
 
@@ -70,4 +70,7 @@ The current code and versioned validation records describe implementation status
 - [Pipeline merge validation](operations/pipeline-merge-validation-2026-11-18.md): historical 482-test baseline.
 
 - [Pipeline orchestration](architecture/pipeline-orchestration.md): preview, dependency order and atomic chains.
-- [Orchestration validation](operations/orchestration-validation-2026-11-18.md): current 545-test baseline.
+- [Orchestration validation](operations/orchestration-validation-2026-11-18.md): historical 545-test baseline.
+
+- [Governed lineage](architecture/governed-lineage.md): permission-checked recorded provenance.
+- [Lineage validation](operations/lineage-validation-2026-11-18.md): current 590-test baseline.

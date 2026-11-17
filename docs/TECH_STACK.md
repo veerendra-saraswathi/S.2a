@@ -78,3 +78,7 @@ Synchronous Python standard-library projection/filter engine, existing SQLite pu
 ## Chain execution (v0.6.0)
 
 Python standard-library in-memory overlays and serial execution within the existing SQLite Service transaction. No new dependencies or distributed scheduler.
+
+## Lineage inspection (v0.7.0)
+
+Python standard-library graph traversal over existing immutable revisions and live governance checks. No graph database or new dependency is introduced.

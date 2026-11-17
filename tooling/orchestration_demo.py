@@ -13,7 +13,7 @@ sys.path[:0] = [str(p) for p in (ROOT/'subsystems').iterdir() if p.is_dir()]
 from s2.service import Service
 
 
-def run(storage):
+def run(storage, lineage=False):
     with tempfile.TemporaryDirectory(prefix='s2-chain-') as folder:
         service=Service(Path(folder)/'demo.db',storage_backend=storage)
         token=service.bootstrap('Synthetic laboratory',3,['ENG'])['token']
@@ -56,15 +56,20 @@ def run(storage):
              mappings={'asset_id':'asset_id','reading':'reading'},action_properties=['status'],initial_values={'status':'pending'})
         call('bindings.materialize',branch=branch,expected_head=head(),binding='assets',idempotency_key='build')
         objects=call('objects.list',branch=branch)['objects'];assert len(objects)==1
+        graph=None
+        if lineage:
+            graph=call('lineage.trace',branch=branch,expected_head=head(),resource='object/'+objects[0]['id'])
+            assert len(graph['nodes'])==10 and len(graph['edges'])==9
         report=service.store.storage_report();assert not report['broken_references']
         return {'storage':storage,'rejected_stage_statuses':[s['status'] for s in rejected['stages']],
                 'rejected_preview_left_outputs_unchanged':True,'chain':result,'replay_same_result':result==repeated,
                 'downstream_input_pinned_to_upstream_output':True,'objects_materialized':len(objects),'object':objects[0],
-                'audit':call('audit.verify'),'storage_report':report,'external_effects':False,
+                'lineage':graph,'audit':call('audit.verify'),'storage_report':report,'external_effects':False,
                 'database':'temporary; removed after demonstration'}
 
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--storage',choices=['json','parquet','iceberg'],default='json')
-    args=parser.parse_args();print(json.dumps(run(args.storage),indent=2))
+    parser.add_argument('--lineage',action='store_true',help='Also trace the final object to source snapshots')
+    args=parser.parse_args();print(json.dumps(run(args.storage,args.lineage),indent=2))

@@ -13,6 +13,7 @@ from s2_catalog_storage.store import Store
 from s2_catalog_storage.datasets import Datasets
 from s2_catalog_storage.merges import ReviewedMerges
 from s2_governance_control.security import Security
+from s2_governance_control.lineage import Lineage
 from s2_ontology_kernel.kernel import Kernel
 from s2_ontology_kernel.bindings import Bindings
 from s2_kinetic_actions.actions import Actions
@@ -23,6 +24,7 @@ class Service:
         self.store = Store(database, storage_backend=storage_backend, warehouse=warehouse)
         self.security = Security()
         self.kernel = Kernel(self.store, self.security)
+        self.lineage = Lineage(self.store, self.security, self.kernel)
         self.datasets = Datasets(self.store, self.security, self.kernel)
         self.pipelines = Pipelines(self.store, self.security, self.kernel)
         self.orchestration = Orchestration(self.store, self.security, self.kernel, self.pipelines)
@@ -68,6 +70,7 @@ class Service:
             'actions.submit': ('write', self.actions.submit),
             'actions.approve': ('admin', self.actions.approve),
             'actions.execute': ('write', self.actions.execute),
+            'lineage.trace': ('read', self.lineage.trace),
             'audit.verify': ('admin', self.verify_audit),
             'policy.restrict': ('admin', self.restrict_policy),
             'bindings.define': ('write', self.bindings.define),
