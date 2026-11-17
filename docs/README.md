@@ -1,6 +1,6 @@
 # Samanvaya 2 documentation
 
-**Version covered:** v0.5.0 · **Reviewed:** 17 November 2026 · **Stage:** Gate 1 reference foundation.
+**Version covered:** v0.5.1 · **Reviewed:** 17 November 2026 · **Stage:** Gate 1 reference foundation.
 
 [Repository landing page](../README.md) · [Quick start](guides/QUICKSTART.md) · [Documents & presentations](resources/README.md)
 
@@ -64,4 +64,7 @@ The current code and versioned validation records describe implementation status
 - [Ingestion validation](operations/ingestion-validation-2026-11-18.md): historical 359-test baseline.
 
 - [Versioned pipelines](architecture/versioned-pipelines.md): transforms, health checks and provenance.
-- [Pipeline validation](operations/pipeline-validation-2026-11-18.md): current 428-test baseline.
+- [Pipeline validation](operations/pipeline-validation-2026-11-18.md): historical 428-test baseline.
+
+- [Pipeline-aware merges](architecture/pipeline-merges.md): graph, output and policy coherence.
+- [Pipeline merge validation](operations/pipeline-merge-validation-2026-11-18.md): current 482-test baseline.

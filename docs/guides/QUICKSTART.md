@@ -36,7 +36,7 @@ S2_REQUIRE_STORAGE_TESTS=1 .venv/bin/python -m unittest discover -s tests -v
 python3 tooling/check_headers.py
 ```
 
-The v0.5.0 baseline is **428 passing tests**, with no skipped file-storage suites. See the [pipeline validation record](../operations/pipeline-validation-2026-11-18.md).
+The v0.5.1 baseline is **482 passing tests**, with no skipped file-storage suites. See the [pipeline validation record](../operations/pipeline-merge-validation-2026-11-18.md).
 
 ## 4. Demonstrate Iceberg and verify artifacts
 
@@ -133,4 +133,12 @@ Expected: two materialized objects, replay equality, valid audit and no broken s
 .venv/bin/python tooling/pipeline_demo.py --storage iceberg
 ```
 
-Expected: two input rows, one output row, one materialized object, valid audit and replay equality. Pipeline definitions advance the catalog to format 6; old executables refuse it. Dataset-branch merges containing pipelines are currently blocked. See [contract](../architecture/versioned-pipelines.md).
+Expected: two input rows, one output row, one materialized object, valid audit and replay equality. Pipeline definitions advance the catalog to format 6; old executables refuse it. Use the reviewed merge API for pipeline-bearing data branches; the legacy endpoint remains blocked. See [contract](../architecture/versioned-pipelines.md).
+
+## Reviewed pipeline scenario demo
+
+```bash
+.venv/bin/python tooling/pipeline_demo.py --storage iceberg --merge
+```
+
+Expected: same object ID, reading 40, inspection preserved, source unchanged, replay equality and valid audit.

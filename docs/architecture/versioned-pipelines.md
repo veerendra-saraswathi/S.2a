@@ -67,7 +67,7 @@ Dependencies propagate through subsequent pipeline stages and into newly materia
 
 ## Branching and compatibility
 
-Forks inherit pipeline revisions and isolate subsequent definition/run changes. **Both dataset-branch merge APIs reject manifests containing pipeline definitions in this slice.** General pipeline-aware merge validation is future work. This is an application-data branch boundary; Git merge/push workflows are unaffected. Existing non-pipeline branch merge behavior remains tested.
+Forks inherit pipeline revisions and isolate subsequent definition/run changes. **v0.5.1 supports coherent pipeline-bearing manifests through the reviewed merge API.** The legacy endpoint remains guarded. See [pipeline merge contract](pipeline-merges.md). This is an application-data branch boundary; Git merge/push workflows are unaffected. Existing non-pipeline branch merge behavior remains tested.
 
 Defining the first pipeline advances the local catalog format to **6**, in the same transaction. Earlier runtimes must refuse the catalog because they do not enforce derived-dataset policy dependencies. Existing formats 1–5 remain supported by the new runtime. Keep a pre-upgrade database backup if you need to return to an older executable; a Git checkout alone does not downgrade a format-6 database. The demos use disposable databases.
 

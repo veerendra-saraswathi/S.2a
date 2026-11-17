@@ -66,4 +66,4 @@ The synthetic demo records a separately approved annotation in a scenario and me
 
 ## Pipeline boundary introduced in v0.5.0
 
-Both branch merge APIs reject pipeline-bearing manifests pending explicit pipeline-aware coherence validation. Non-pipeline reviewed merge behavior remains supported. See [pipeline scope](versioned-pipelines.md).
+The v0.5.0 guard is superseded by v0.5.1: the reviewed endpoint now validates coherent pipeline-bearing manifests. The legacy endpoint remains guarded. See [pipeline merge contract](pipeline-merges.md). See [pipeline scope](versioned-pipelines.md).

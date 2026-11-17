@@ -20,3 +20,5 @@ Copyright (c) 2026 Veerendra Kiran Bidarkota. All Rights Reserved — Proprietar
 ## Executable reference slice (v0.5.0)
 
 `s2_compute_pipelines/pipelines.py` implements explicit single-input projection/filter transforms, preview hashes, count/range checks and atomic replacement snapshots. See [contract](../../docs/architecture/versioned-pipelines.md). Remaining directories reserve future DAG, scheduling and worker responsibilities.
+
+In v0.5.1, `validate_merged_manifest` provides read-only graph/output/policy coherence checks for reviewed merges. See [contract](../../docs/architecture/pipeline-merges.md).

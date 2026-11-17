@@ -17,3 +17,5 @@ The Python package in this subsystem, where present, is the executable Gate 1 im
 Copyright (c) 2026 Veerendra Kiran Bidarkota. All Rights Reserved — Proprietary Commercial Software.
 
 Reviewed binding-aware direct-fork publication is implemented in `s2_catalog_storage/merges.py`. See [contract](../../docs/architecture/reviewed-merges.md). General merge-base discovery and row/property conflict resolution remain outside this slice.
+
+In v0.5.1, reviewed merges include pipeline coherence proofs and explicitly authorize pipeline resources. The legacy merge route stays guarded. See [contract](../../docs/architecture/pipeline-merges.md).

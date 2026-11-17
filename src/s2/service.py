@@ -27,7 +27,7 @@ class Service:
         self.ingestion = Ingestion(self.store, self.security, self.kernel, self.datasets)
         self.actions = Actions(self.store, self.security, self.kernel)
         self.bindings = Bindings(self.store, self.security, self.kernel)
-        self.reviewed_merges = ReviewedMerges(self.store, self.security, self.kernel, self.bindings, self.check_project)
+        self.reviewed_merges = ReviewedMerges(self.store, self.security, self.kernel, self.bindings, self.check_project, self.pipelines)
         self.routes = {
             'projects.create': ('admin', self.create_project),
             'projects.grant': ('admin', self.grant_project),

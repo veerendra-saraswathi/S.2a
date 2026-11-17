@@ -7,9 +7,10 @@ from s2_platform import Conflict, S2Error, canonical, digest
 
 
 class ReviewedMerges:
-    def __init__(self, store, security, kernel, bindings, check_project):
+    def __init__(self, store, security, kernel, bindings, check_project, pipelines):
         self.store, self.security, self.kernel = store, security, kernel
         self.bindings, self.check_project = bindings, check_project
+        self.pipelines = pipelines
 
     def _branches(self, db, ctx, branch, source):
         target = self.store.branch(db, ctx.tenant, branch)
@@ -45,13 +46,14 @@ class ReviewedMerges:
             elif key.startswith('binding/'):
                 value['marking'] = self.security.effective(db, ctx, key, value['marking'])
                 self.security.check_marking(ctx, value['marking'])
-            elif key.startswith(('object/', 'link/', 'linktype/')):
+            elif key.startswith(('object/', 'link/', 'linktype/', 'pipeline/')):
                 self.security.check_marking(ctx, value.get('marking'))
             effective[key] = digest(value)
         return effective
 
     def _coherent(self, db, ctx, manifest):
         self.kernel.validate_manifest(db, ctx.tenant, manifest)
+        pipeline_proofs = self.pipelines.validate_merged_manifest(db, ctx, manifest)
         for key in manifest:
             if key.startswith('action/'):
                 action = self.kernel.resource(db, ctx, manifest, key)
@@ -94,6 +96,8 @@ class ReviewedMerges:
                 elif not state or state['presence'] != 'MISSING' or state['observed_dataset_revision'] != snapshot:
                     raise Conflict('Merged source absence requires reviewed reconciliation')
 
+        return pipeline_proofs
+
     def _plan(self, db, ctx, branch, source, expected_head, expected_source, reason):
         self.security.require(ctx, 'admin')
         if not isinstance(reason, str) or not 1 <= len(reason.strip()) <= 1000:
@@ -107,8 +111,6 @@ class ReviewedMerges:
         common = self.store.manifest(db, ctx.tenant, base)
         ours = self.store.manifest(db, ctx.tenant, expected_head)
         theirs = self.store.manifest(db, ctx.tenant, expected_source)
-        if any(key.startswith('pipeline/') for m in (common, ours, theirs) for key in m):
-            raise Conflict('Pipeline-aware branch merge is not supported in this slice')
         # Authorize all inputs before returning resource names, counts or conflicts.
         policies = [self._authorize(db, ctx, m) for m in (common, ours, theirs)]
         merged, conflicts = dict(ours), []
@@ -125,12 +127,12 @@ class ReviewedMerges:
         if merged == ours:
             raise Conflict('No source changes to publish')
         policies.append(self._authorize(db, ctx, merged))
-        self._coherent(db, ctx, merged)
+        pipeline_proofs = self._coherent(db, ctx, merged)
         changes = {key: {'previous_revision': ours.get(key), 'proposed_revision': merged[key]}
                    for key in sorted(merged) if merged[key] != ours.get(key)}
         plan = {'branch': branch, 'source': source, 'base_commit': base,
                 'target_commit': expected_head, 'source_commit': expected_source,
-                'changes': changes, 'reason': reason.strip()}
+                'changes': changes, 'reason': reason.strip(), 'pipelines': pipeline_proofs}
         plan['plan_hash'] = digest({'plan': plan, 'manifest': merged, 'policy': policies, 'actor': ctx.principal})
         return merged, plan
 

@@ -5,11 +5,11 @@
 | Document control | Value |
 | --- | --- |
 | Product | Samanvaya 2 — Enterprise Data Operating System and Operational Ontology Platform |
-| Version covered | 0.5.0 |
+| Version covered | 0.5.1 |
 | Review date | 17 November 2026 |
 | Maturity | Executable Gate 1 reference foundation |
 | Ownership | Veerendra Kiran Bidarkota — Proprietary Commercial Software |
-| Validation baseline | 428 local tests; successful Iceberg ingestion-to-pipeline-to-Ontology demo |
+| Validation baseline | 482 local tests; successful Iceberg ingestion-to-pipeline-to-Ontology demo |
 
 ## 1. Purpose and current scope
 
@@ -130,3 +130,7 @@ The connector fabric now validates local CSV/JSON records against explicit datas
 ## Reviewed pipeline execution
 
 The compute subsystem now projects and filters a pinned dataset snapshot, checks schema/range/count expectations and publishes a reviewed output atomically. Source policies propagate through derived snapshots and bound objects. See [scope and compatibility](architecture/versioned-pipelines.md).
+
+## Pipeline-aware reviewed merge
+
+Coherent pipeline-bearing branches can now publish through the reviewed API. Validation covers the definition graph, exact output values and provenance, source policy dependencies and existing binding/object consistency. See [contract](architecture/pipeline-merges.md).

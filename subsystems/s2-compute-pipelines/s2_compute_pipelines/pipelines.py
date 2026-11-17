@@ -5,7 +5,7 @@
 import json
 import math
 import re
-from s2_platform import S2Error, Conflict, NotFound, canonical, digest, new_id, now
+from s2_platform import S2Error, Conflict, NotFound, canonical, digest, new_id, now, dominates
 from s2_ontology_kernel.bindings import joined
 
 
@@ -167,3 +167,81 @@ class Pipelines:
         row=db.execute('SELECT result FROM pipeline_runs WHERE tenant=? AND branch=? AND id=? AND actor=?',(ctx.tenant,branch,run,ctx.principal)).fetchone()
         if row is None:raise NotFound('Pipeline run not found')
         return self._receipt(db,ctx,json.loads(row['result']))
+
+    def validate_merged_manifest(self, db, ctx, manifest):
+        """Read-only consistency proof; never rebuild datasets during a merge."""
+        definitions = {key[9:]: self.kernel.resource(db, ctx, manifest, key)
+                       for key in manifest if key.startswith('pipeline/')}
+        if len(definitions) > 100:
+            raise S2Error('Reviewed merge is limited to 100 pipeline definitions')
+        producers = {}
+        for name, spec in definitions.items():
+            self.security.check_marking(ctx, spec['marking'])
+            if spec['output'] in producers:
+                raise Conflict('Merged pipelines have competing output writers')
+            producers[spec['output']] = name
+        pending = set(definitions)
+        ordered = []
+        while pending:
+            ready = sorted(name for name in pending
+                           if producers.get(definitions[name]['input']) not in pending)
+            if not ready:
+                raise Conflict('Merged pipeline dependency graph contains a cycle')
+            ordered.extend(ready)
+            pending.difference_update(ready)
+        for key in manifest:
+            if key.startswith('dataset/'):
+                raw = self.store.revision(db, ctx.tenant, manifest[key])
+                provenance = raw.get('source_pipeline')
+                if provenance and (provenance['pipeline'] not in definitions or
+                        definitions[provenance['pipeline']]['output'] != key[8:]):
+                    raise Conflict('Derived dataset has no matching pipeline definition')
+        proofs = []
+        for name in ordered:
+            spec = definitions[name]
+            source = self._dataset(db, ctx, manifest, spec['input'])
+            target = self._dataset(db, ctx, manifest, spec['output'])
+            self._spec({k: spec[k] for k in ('input','output','mappings','filter','expectations')}, source, target)
+            raw_source = self.store.revision(db, ctx.tenant, manifest['dataset/' + spec['input']])
+            raw_target = self.store.revision(db, ctx.tenant, manifest['dataset/' + spec['output']])
+            if digest(raw_source['schema']) != spec['input_schema'] or digest(raw_target['schema']) != spec['output_schema']:
+                raise Conflict('Merged pipeline schema pins are stale')
+            provenance = raw_target.get('source_pipeline', {})
+            if (provenance.get('pipeline') != name or provenance.get('pipeline_revision') != manifest['pipeline/' + name]
+                    or provenance.get('input') != spec['input'] or provenance.get('input_revision') != manifest['dataset/' + spec['input']]):
+                raise Conflict('Merged pipeline output is missing or stale; run before merge')
+            expected = []
+            for row in source['rows']:
+                values = row['values']; predicate = spec['filter']
+                if predicate is not None and (predicate['property'] not in values or
+                        canonical(values[predicate['property']]) != canonical(predicate['equals'])):
+                    continue
+                projected = {dest: values[src] for dest, src in spec['mappings'].items() if src in values}
+                self.kernel.validate_values(target['schema'], projected)
+                for prop, (lo, hi) in spec['expectations']['ranges'].items():
+                    if prop not in projected or not lo <= projected[prop] <= hi:
+                        raise Conflict('Merged pipeline fails range expectations')
+                expected.append(projected)
+            if not spec['expectations']['min_rows'] <= len(expected) <= spec['expectations']['max_rows']:
+                raise Conflict('Merged pipeline fails row-count expectations')
+            if sorted(map(canonical, expected)) != sorted(canonical(row['values']) for row in target['rows']):
+                raise Conflict('Merged output differs from its declared transform; rerun before merge')
+            dependencies = set(raw_source.get('source_pipeline', {}).get('policy_resources', []))
+            dependencies.update(['pipeline/' + name, 'dataset/' + spec['input']])
+            dependencies.update('dataset/' + spec['input'] + '/property/' + prop for prop in source['schema']['properties'])
+            dependencies.update('dataset/' + spec['input'] + '/row/' + canonical(row['values'][source['primary_key']])
+                                for row in source['rows'])
+            if not dependencies.issubset(provenance.get('policy_resources', [])):
+                raise Conflict('Merged output is missing source policy dependencies')
+            raw_spec = self.store.revision(db, ctx.tenant, manifest['pipeline/' + name])
+            floor = joined(raw_spec.get('marking'), raw_source['schema'].get('marking'),
+                           raw_source.get('source_pipeline', {}).get('marking'),
+                           *(p.get('marking') for p in raw_source['schema']['properties'].values()),
+                           *(r.get('marking') for r in raw_source['rows']))
+            if not dominates(joined(provenance.get('marking')), floor):
+                raise Conflict('Merged output classification is below its source')
+            proofs.append({'pipeline': name, 'pipeline_revision': manifest['pipeline/' + name],
+                           'input_revision': manifest['dataset/' + spec['input']],
+                           'output_revision': manifest['dataset/' + spec['output']],
+                           'output_rows': len(expected), 'health': 'PASSED'})
+        return proofs
