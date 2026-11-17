@@ -59,3 +59,7 @@ ResourceRevision-backed transforms, pipeline DAGs/runs, source bindings, checkpo
 ## Ingestion receipts (v0.4.0)
 
 The operational `ingestion_runs` table stores tenant/branch/run/actor, idempotency key, request hash and committed receipt. Publication and receipt creation share the dataset transaction and audit boundary. See [contract](../architecture/file-ingestion.md).
+
+## Versioned pipelines and runs (v0.5.0)
+
+`pipeline/<name>` manifest resources pin a transform definition and schema hashes. Output snapshots carry `source_pipeline` provenance/dependencies. Operational `pipeline_runs` receipts are keyed by `(tenant,branch,idem)` and uniquely by `(tenant,branch,id)`; actor-scoped retrieval rechecks current policy. First definition advances catalog format to 6. See [details](../architecture/versioned-pipelines.md).

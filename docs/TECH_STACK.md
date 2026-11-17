@@ -70,3 +70,7 @@ S2's core implementation is proprietary. Dependencies retain their upstream lice
 ## Local ingestion runtime (v0.4.0)
 
 CSV/JSON intake uses the Python standard library (`csv`, `json`, `hashlib`) and existing transactional dataset/storage backends. No additional dependencies are introduced.
+
+## Pipeline runtime (v0.5.0)
+
+Synchronous Python standard-library projection/filter engine, existing SQLite publication boundary and JSON/Parquet/Iceberg snapshot storage. No new dependencies, arbitrary code evaluation or distributed compute engine.

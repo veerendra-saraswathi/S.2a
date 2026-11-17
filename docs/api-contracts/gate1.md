@@ -70,3 +70,7 @@ The JSON envelope schema documents operation names, required fields and unknown-
 ## File intake (v0.4.0)
 
 `ingestion.preview`, `ingestion.apply` and `ingestion.get` are documented in [file ingestion](../architecture/file-ingestion.md), including exact parameters, classifications, replay and limits.
+
+## Pipelines (v0.5.0)
+
+`pipelines.define`, `pipelines.preview`, `pipelines.run`, `pipelines.get`: see [exact definition and operation contracts](../architecture/versioned-pipelines.md).

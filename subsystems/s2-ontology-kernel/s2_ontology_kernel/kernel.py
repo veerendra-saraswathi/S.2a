@@ -22,12 +22,20 @@ class Kernel:
                     spec['marking'] = self.security.effective(db, ctx, key + '/property/' + prop, spec.get('marking'))
             elif key.startswith('dataset/'):
                 payload['schema']['marking'] = self.security.effective(db, ctx, key, payload['schema'].get('marking'))
+                if 'source_pipeline' in payload:
+                    from .bindings import joined
+                    payload['schema']['marking'] = joined(payload['schema']['marking'], payload['source_pipeline'].get('marking'))
+                    for dependency in payload['source_pipeline']['policy_resources']:
+                        payload['schema']['marking'] = joined(payload['schema']['marking'],
+                            self.security.effective(db, ctx, dependency, None))
                 for prop, spec in payload['schema']['properties'].items():
                     spec['marking'] = self.security.effective(db, ctx, key + '/property/' + prop, spec.get('marking'))
                 from s2_platform import canonical
                 for row in payload['rows']:
                     identity = canonical(row['values'][payload['primary_key']])
                     row['marking'] = self.security.effective(db, ctx, key + '/row/' + identity, row.get('marking'))
+            elif key.startswith('pipeline/'):
+                payload['marking'] = self.security.effective(db, ctx, key, payload.get('marking'))
             elif key.startswith(('object/', 'link/', 'linktype/')):
                 payload['marking'] = self.security.effective(db, ctx, key, payload.get('marking'))
                 if key.startswith('object/') and 'source_binding' in payload:

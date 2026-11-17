@@ -36,7 +36,7 @@ S2_REQUIRE_STORAGE_TESTS=1 .venv/bin/python -m unittest discover -s tests -v
 python3 tooling/check_headers.py
 ```
 
-The v0.4.0 baseline is **359 passing tests**, with no skipped file-storage suites. See the [binding validation record](../operations/ingestion-validation-2026-11-18.md).
+The v0.5.0 baseline is **428 passing tests**, with no skipped file-storage suites. See the [pipeline validation record](../operations/pipeline-validation-2026-11-18.md).
 
 ## 4. Demonstrate Iceberg and verify artifacts
 
@@ -126,3 +126,11 @@ For the combined migration demo, add `--migrate` to the command above. It adds r
 ```
 
 Expected: two materialized objects, replay equality, valid audit and no broken storage references. Real-file commands are documented in [file ingestion](../architecture/file-ingestion.md).
+
+## Pipeline demo
+
+```bash
+.venv/bin/python tooling/pipeline_demo.py --storage iceberg
+```
+
+Expected: two input rows, one output row, one materialized object, valid audit and replay equality. Pipeline definitions advance the catalog to format 6; old executables refuse it. Dataset-branch merges containing pipelines are currently blocked. See [contract](../architecture/versioned-pipelines.md).

@@ -2,7 +2,7 @@
 
 [Repository](../README.md) · [Documentation index](README.md) · [Current implementation matrix](parity-matrix/gate1.md)
 
-This roadmap describes the engineering sequence for the proprietary S2 enterprise platform. It is not a delivery-date, budget or production-acceptance commitment. The current baseline is **v0.4.0**, validated locally with 359 tests.
+This roadmap describes the engineering sequence for the proprietary S2 enterprise platform. It is not a delivery-date, budget or production-acceptance commitment. The current baseline is **v0.5.0**, validated locally with 428 tests.
 
 ## Delivered foundation
 
@@ -53,3 +53,7 @@ Reviewed binding-aware direct-fork merges are implemented in v0.4.0. General mer
 ## v0.4.0 — First connector-fabric slice delivered
 
 Bounded local CSV/JSON ingestion supports reviewed atomic APPEND and traceable receipts. Remote connectors, CDC, schema inference and scheduled pipelines remain open. See [scope](architecture/file-ingestion.md).
+
+## v0.5.0 — First compute slice delivered
+
+Versioned projection/filter definitions, reviewed replacement runs, row-count/range checks, receipts and transitive policy propagation are implemented. Pipeline-aware data-branch merges, scheduling, general transforms and visual DAGs remain open. See [contract](architecture/versioned-pipelines.md).

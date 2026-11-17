@@ -7,6 +7,7 @@ import json
 import sqlite3
 from s2_platform import Context, S2Error, Forbidden, Conflict, NotFound, canonical, new_id, marking, dominates
 from s2_connector_fabric.ingestion import Ingestion
+from s2_compute_pipelines.pipelines import Pipelines
 from s2_catalog_storage.store import Store
 from s2_catalog_storage.datasets import Datasets
 from s2_catalog_storage.merges import ReviewedMerges
@@ -22,6 +23,7 @@ class Service:
         self.security = Security()
         self.kernel = Kernel(self.store, self.security)
         self.datasets = Datasets(self.store, self.security, self.kernel)
+        self.pipelines = Pipelines(self.store, self.security, self.kernel)
         self.ingestion = Ingestion(self.store, self.security, self.kernel, self.datasets)
         self.actions = Actions(self.store, self.security, self.kernel)
         self.bindings = Bindings(self.store, self.security, self.kernel)
@@ -41,6 +43,10 @@ class Service:
             'datasets.stage': ('write', self.datasets.stage),
             'datasets.commit': ('write', self.datasets.commit),
             'datasets.abort': ('write', self.datasets.abort),
+            'pipelines.define': ('admin', self.pipelines.define),
+            'pipelines.preview': ('write', self.pipelines.preview),
+            'pipelines.run': ('write', self.pipelines.run),
+            'pipelines.get': ('read', self.pipelines.get),
             'ingestion.preview': ('write', self.ingestion.preview),
             'ingestion.apply': ('write', self.ingestion.apply),
             'ingestion.get': ('read', self.ingestion.get),
@@ -88,6 +94,11 @@ class Service:
                        'idem TEXT NOT NULL, request_hash TEXT NOT NULL, result TEXT NOT NULL, '
                        'PRIMARY KEY(tenant,branch,idem), UNIQUE(tenant,branch,id))')
 
+            db.execute('CREATE TABLE IF NOT EXISTS pipeline_runs('
+                       'tenant TEXT NOT NULL, branch TEXT NOT NULL, id TEXT NOT NULL, actor TEXT NOT NULL, '
+                       'idem TEXT NOT NULL, request_hash TEXT NOT NULL, result TEXT NOT NULL, '
+                       'PRIMARY KEY(tenant,branch,idem), UNIQUE(tenant,branch,id))')
+
     def bootstrap(self, name, clearance=0, compartments=None):
         """Host-administrator CLI only. Deliberately absent from the network API."""
         if not isinstance(name, str) or not name.strip():
@@ -122,7 +133,7 @@ class Service:
                     if expected and expected != branch['head']:
                         # Idempotent transaction/invocation retries validate their own pinned base.
                         if operation not in {'datasets.begin', 'actions.submit', 'bindings.materialize', 'bindings.migrate',
-                                              'branches.merge_reviewed', 'ingestion.apply'}:
+                                              'branches.merge_reviewed', 'ingestion.apply', 'pipelines.run'}:
                             raise Conflict('Stale branch head')
                 result = handler(db, ctx, **params)
                 self.security.audit(db, ctx, operation, params.get('branch', ctx.tenant),
@@ -216,6 +227,8 @@ class Service:
         common = self.store.manifest(db, ctx.tenant, base)
         ours = self.store.manifest(db, ctx.tenant, expected_head)
         theirs = self.store.manifest(db, ctx.tenant, expected_source)
+        if any(key.startswith('pipeline/') for key in set(ours) | set(theirs)):
+            raise Conflict('Pipeline-aware branch merge is not supported in this slice')
         if any(key.startswith('binding/') for key in set(ours) | set(theirs)):
             raise Conflict('Binding-aware branch merge requires a future reconciliation workflow')
         merged = dict(ours)

@@ -107,6 +107,8 @@ class ReviewedMerges:
         common = self.store.manifest(db, ctx.tenant, base)
         ours = self.store.manifest(db, ctx.tenant, expected_head)
         theirs = self.store.manifest(db, ctx.tenant, expected_source)
+        if any(key.startswith('pipeline/') for m in (common, ours, theirs) for key in m):
+            raise Conflict('Pipeline-aware branch merge is not supported in this slice')
         # Authorize all inputs before returning resource names, counts or conflicts.
         policies = [self._authorize(db, ctx, m) for m in (common, ours, theirs)]
         merged, conflicts = dict(ours), []

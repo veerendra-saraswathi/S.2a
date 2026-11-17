@@ -193,6 +193,8 @@ class Bindings:
                             'dataset/' + spec['dataset'] + '/row/' + identity]
             dependencies.extend('dataset/' + spec['dataset'] + '/property/' + prop
                                 for prop in source['schema']['properties'])
+            dependencies.extend(source.get('source_pipeline', {}).get('policy_resources', []))
+            dependencies = sorted(set(dependencies))
             label = joined(spec['marking'], source['schema'].get('marking'), row['marking'],
                            target.get('marking'), old['marking'] if old else None,
                            *(p.get('marking') for p in source['schema']['properties'].values()),

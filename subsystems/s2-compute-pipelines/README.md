@@ -16,3 +16,7 @@ The Python package in this subsystem, where present, is the executable Gate 1 im
 - `pipeline-builder-ui/`
 
 Copyright (c) 2026 Veerendra Kiran Bidarkota. All Rights Reserved — Proprietary Commercial Software.
+
+## Executable reference slice (v0.5.0)
+
+`s2_compute_pipelines/pipelines.py` implements explicit single-input projection/filter transforms, preview hashes, count/range checks and atomic replacement snapshots. See [contract](../../docs/architecture/versioned-pipelines.md). Remaining directories reserve future DAG, scheduling and worker responsibilities.

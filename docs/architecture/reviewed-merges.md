@@ -63,3 +63,7 @@ No catalog format bump is needed: existing immutable revisions are reused. Servi
 ```
 
 The synthetic demo records a separately approved annotation in a scenario and merges it while retaining the earlier approved inspection, source provenance and object identity. `--merge` includes the compatible migration needed for the annotation field. The temporary database is removed afterwards.
+
+## Pipeline boundary introduced in v0.5.0
+
+Both branch merge APIs reject pipeline-bearing manifests pending explicit pipeline-aware coherence validation. Non-pipeline reviewed merge behavior remains supported. See [pipeline scope](versioned-pipelines.md).
