@@ -36,7 +36,7 @@ S2_REQUIRE_STORAGE_TESTS=1 .venv/bin/python -m unittest discover -s tests -v
 python3 tooling/check_headers.py
 ```
 
-The v0.3.2 baseline is **245 passing tests**, with no skipped file-storage suites. See the [binding validation record](../operations/migration-validation-2026-11-17.md).
+The v0.3.3 baseline is **296 passing tests**, with no skipped file-storage suites. See the [binding validation record](../operations/merge-validation-2026-11-17.md).
 
 ## 4. Demonstrate Iceberg and verify artifacts
 

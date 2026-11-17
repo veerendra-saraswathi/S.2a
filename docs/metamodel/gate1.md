@@ -51,3 +51,7 @@ For string key `a`, the row selector is `dataset/readings/row/"a"`. Restriction 
 ## Reserved complete-platform entities
 
 ResourceRevision-backed transforms, pipeline DAGs/runs, source bindings, checkpoints, application/widgets, typed Object Set query plans, SDK schema fingerprints, Function packages, external outbox intents, AI Logic/model/evaluation revisions, lineage edges, license entitlements and signed audit anchors remain planned. Corresponding subsystem boundaries exist; no implementation is claimed for them.
+
+## Reviewed merge replay state (v0.3.3)
+
+`branch_merges` is keyed by `(tenant, branch, idem)` and stores a request hash and committed result. The hash binds actor, source, pinned heads, reason and reviewed plan hash. It is operational replay state, not a branch-manifest resource. Target commit, replay row and success audit publish in the same local transaction. Merge commits retain both parents; source commits and immutable revisions are reused.

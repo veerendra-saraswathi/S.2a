@@ -17,7 +17,7 @@ This is a bounded binding migration service. It does not create or alter source 
 | Existing source/Action ownership | Cannot be transferred or removed |
 | Identity | Dataset, namespace, primary key, object type and existing primary-key property mappings remain fixed |
 | Missing source objects | Migration rejected, including retained missing objects; separate missing-object migration semantics remain open |
-| Branches | Forks isolate migrations; binding-aware merges remain unsupported |
+| Branches | Forks isolate migrations; v0.3.3 adds reviewed direct-fork merges |
 
 New Action-field defaults initialize that new field on existing objects during migration and initialize future objects. Later ordinary refresh preserves the field's current operational value; it does not repeatedly reset it to the default.
 
@@ -64,7 +64,7 @@ Migration joins old binding restrictions, current source restrictions, current t
 
 A successful migration advances the catalog to **format 5**. Preview or failed migration leaves its format unchanged. Binding creation, normal materialization, source reconciliation and restart preserve format 5 rather than downgrading it. Older binaries reject format 5 at startup; stop existing old processes before upgrade and keep a pre-migration catalog/warehouse backup for downgrade recovery.
 
-The existing 1,000-row/owned-object/result-object bounds apply. There is no distributed schema rollout, arbitrary coercion, source schema editor, property removal, ownership transfer, identity reassignment, hard deletion, migration of missing objects or binding-aware merge implementation. Missing objects must genuinely return before this slice can migrate them, or await a future explicit migration policy; fabricating source rows is not a recovery procedure.
+The existing 1,000-row/owned-object/result-object bounds apply. There is no distributed schema rollout, arbitrary coercion, source schema editor, property removal, ownership transfer, identity reassignment, hard deletion, migration of missing objects or general merge conflict resolution. Missing objects must genuinely return before this slice can migrate them, or await a future explicit migration policy; fabricating source rows is not a recovery procedure.
 
 ## Disposable end-to-end demonstration
 
@@ -73,3 +73,5 @@ The existing 1,000-row/owned-object/result-object bounds apply. There is no dist
 ```
 
 Expected: same object ID; source presence PRESENT after retained absence; approved status inspected; reading and reading_copy both 30; review_note unreviewed; migration replay true; binding revision changed; valid audit chain. The demo uses temporary data and performs no external writes.
+
+See [reviewed merges](reviewed-merges.md) for publishing a completed compatible migration from a scenario branch.

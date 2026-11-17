@@ -2,7 +2,7 @@
 
 [Repository](../README.md) · [Documentation index](README.md) · [Current implementation matrix](parity-matrix/gate1.md)
 
-This roadmap describes the engineering sequence for the proprietary S2 enterprise platform. It is not a delivery-date, budget or production-acceptance commitment. The current baseline is **v0.3.2**, validated locally with 245 tests.
+This roadmap describes the engineering sequence for the proprietary S2 enterprise platform. It is not a delivery-date, budget or production-acceptance commitment. The current baseline is **v0.3.3**, validated locally with 296 tests.
 
 ## Delivered foundation
 
@@ -15,7 +15,7 @@ Gate 1 remains a reference foundation. Production scale, high availability and f
 
 ## In progress — Dataset-to-Ontology integration
 
-**First slice delivered:** explicit bounded builds, immutable mappings, source ownership, pinned provenance, live source-policy propagation and 60 new tests. Explicit reviewed retention and source return are now implemented. Reviewed compatible binding migration is also implemented. Broader schema/identity migration, hard-deletion semantics, binding-aware merges and scheduling remain open. See [implementation details](architecture/ontology-bindings.md).
+**First slice delivered:** explicit bounded builds, immutable mappings, source ownership, pinned provenance, live source-policy propagation and 60 new tests. Explicit reviewed retention and source return are now implemented. Reviewed compatible binding migration is also implemented. Broader schema/identity migration, hard-deletion semantics, general merge resolution and scheduling remain open. See [implementation details](architecture/ontology-bindings.md).
 
 **Overall objective:** materialize governed objects from committed dataset snapshots through versioned mappings.
 
@@ -47,3 +47,5 @@ A suitable synthetic demonstration is a maintenance asset dataset whose committe
 Preserve the transaction and authorization invariants as the implementation grows. New UI components and AI agents must use the same governed Actions as other callers. Moving data into distributed storage must retain a coherent publication boundary and explicit serving readiness. External write-back needs durable intent, idempotency and reconciliation rather than assuming a remote system participates in S2's local transaction.
 
 For every milestone, update the implementation matrix, technical documentation, test evidence and dependency notices together. Product presentations should identify the version they describe and distinguish demonstrated behaviour from roadmap scope.
+
+Reviewed binding-aware direct-fork merges are implemented in v0.3.3. General merge-base resolution and row/property conflict resolution remain open. See [scope](architecture/reviewed-merges.md).

@@ -62,3 +62,7 @@ Supported scalar types: string, integer, number and boolean. Required fields can
 Mutations requiring expected_head must use the current branch commit. Object replacement additionally requires expected_revision; omission means create-only. Dataset begin/commit and Action submit/execute have the documented idempotency semantics. Do not assume that project creation or every API operation is retry-idempotent.
 
 The JSON envelope schema documents operation names, required fields and unknown-field rejection. It intentionally does not encode all domain validation; executable schema, authorization and transaction checks are authoritative.
+
+## Reviewed branch merge (v0.3.3)
+
+`branches.merge_preview` requires admin access and `branch`, `source`, `expected_head`, `expected_source`, `reason`. It returns pinned commits, resource revision changes and a `plan_hash`. `branches.merge_reviewed` takes those same parameters plus `plan_hash` and `idempotency_key`. Reuse the exact request on retry. Both heads and current effective policies are checked before initial publication. Replays recheck current access. See [scope, errors and limits](../architecture/reviewed-merges.md).

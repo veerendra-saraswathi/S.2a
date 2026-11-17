@@ -14,7 +14,9 @@ sys.path[:0] = [str(p) for p in (ROOT / 'subsystems').iterdir() if p.is_dir()]
 from s2.service import Service
 
 
-def run(backend, reconcile=False, migrate=False):
+def run(backend, reconcile=False, migrate=False, merge=False):
+    if merge:
+        migrate = True
     with tempfile.TemporaryDirectory(prefix='s2-binding-demo-') as folder:
         service = Service(Path(folder) / 'demo.db', storage_backend=backend)
         token = service.bootstrap('Synthetic engineering demonstration', 3, ['ENG'])['token']
@@ -109,10 +111,37 @@ def run(backend, reconcile=False, migrate=False):
             migration = {'same_object_id': True, 'approved_status_preserved': True,
                          'replay_same_result': applied == repeated,
                          'binding_revision_changed': applied['binding_revision'] != applied['previous_binding_revision']}
+        merge_result = None
+        if merge:
+            child = call('branches.fork', branch=branch, name='review-scenario')['branch']
+            child_head = call('branches.head', branch=child)['commit']
+            call('actions.define', branch=child, expected_head=child_head, name='AnnotateReview',
+                 object_type='Asset', writable_properties=['review_note'], approvals=1)
+            child_head = call('branches.head', branch=child)['commit']
+            action = call('actions.submit', branch=child, expected_head=child_head, action='AnnotateReview',
+                          edits=[{'object': oid, 'expected_revision': final['revision'],
+                                  'set': {'review_note': 'engineering review complete'}}], idempotency_key='annotate')
+            service.call(reviewer['token'], 'actions.approve', branch=child,
+                         invocation=action['invocation'], effect_hash=action['effect_hash'])
+            call('actions.execute', branch=child, invocation=action['invocation'])
+            source_head = call('branches.head', branch=child)['commit']
+            params = dict(branch=branch, source=child, expected_head=head(), expected_source=source_head,
+                          reason='Publish approved engineering annotation')
+            plan = call('branches.merge_preview', **params)
+            merged = call('branches.merge_reviewed', **params, plan_hash=plan['plan_hash'], idempotency_key='review-merge')
+            repeated = call('branches.merge_reviewed', **params, plan_hash=plan['plan_hash'], idempotency_key='review-merge')
+            final = call('objects.get', branch=branch, object_id=oid)
+            assert final['values']['status'] == 'inspected'
+            assert final['values']['review_note'] == 'engineering review complete'
+            assert merged == repeated
+            assert call('branches.head', branch=child)['commit'] == source_head
+            merge_result = {'same_object_id': final['id'] == oid, 'approved_status_preserved': True,
+                            'replay_same_result': merged == repeated, 'source_unchanged': True,
+                            'changed_resources': merged['changed_resources']}
         return {'storage': backend, 'object': final, 'replay_same_result': retry == build,
                 'approved_status_preserved': True,
                 'reconciliation': reconciliation,
-                'migration': migration,
+                'migration': migration, 'merge': merge_result,
                 'provenance': call('bindings.provenance', branch=branch, object_id=oid),
                 'audit': call('audit.verify'), 'external_effects': False,
                 'database': 'temporary; removed after demonstration'}
@@ -123,5 +152,6 @@ if __name__ == '__main__':
     parser.add_argument('--storage', choices=['json', 'parquet', 'iceberg'], default='json')
     parser.add_argument('--reconcile', action='store_true', help='Also demonstrate retained absence and source return')
     parser.add_argument('--migrate', action='store_true', help='Also preview and apply a compatible binding migration')
+    parser.add_argument('--merge', action='store_true', help='Also merge an approved scenario (includes migration)')
     args = parser.parse_args()
-    print(json.dumps(run(args.storage, args.reconcile, args.migrate), indent=2))
+    print(json.dumps(run(args.storage, args.reconcile, args.migrate, args.merge), indent=2))

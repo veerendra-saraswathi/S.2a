@@ -77,4 +77,8 @@ The demo creates a disposable database, imports pump-01, defines a binding, mate
 
 Stop old S2 processes before applying this update. Back up a persistent catalog and its warehouse together before using bindings on it. Creating the first binding transactionally advances the catalog format to **3**, so older executables reject the catalog on startup. Restarting preserves the current format for all storage backends; successful retained-absence reconciliation advances it to format 4. Rollback requires restoring a pre-binding catalog/warehouse backup, not simply running old code against the upgraded database.
 
-Forks remain supported. Merges where either side contains a binding are explicitly rejected until binding-aware reconciliation exists. This version supports reviewed compatible binding migration but has no automatic CDC, scheduling, transforms, link materialization, hard deletion, query indexes, external write-back or production scale claim. Retained-absence reconciliation is supported separately. Initial scope is synthetic engineering/maintenance records; RCI domain acceptance is separate.
+Forks remain supported. The legacy merge endpoint rejects binding-bearing manifests; v0.3.3 provides the explicit reviewed merge path described below. This version supports reviewed compatible binding migration but has no automatic CDC, scheduling, transforms, link materialization, hard deletion, query indexes, external write-back or production scale claim. Retained-absence reconciliation is supported separately. Initial scope is synthetic engineering/maintenance records; RCI domain acceptance is separate.
+
+## Reviewed scenario publication (v0.3.3)
+
+Use [reviewed binding-aware merges](reviewed-merges.md) to publish coherent scenario changes. The legacy merge endpoint remains guarded.

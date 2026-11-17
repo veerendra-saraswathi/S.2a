@@ -2,4 +2,4 @@
 # Copyright (c) 2026 Veerendra Kiran Bidarkota. All Rights Reserved.
 # Proprietary Commercial Software. See LICENSE.
 """Samanvaya 2 Gate 1 application boundary."""
-__version__ = '0.3.2'
+__version__ = '0.3.3'

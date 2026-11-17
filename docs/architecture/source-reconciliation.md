@@ -55,7 +55,7 @@ Generic object/Action edits preserve source state and cannot directly change it.
 
 Complete snapshot visibility is required; filtered rows cannot be interpreted as deletion. Missing objects retain current source-policy dependencies and destination restrictions. Old branches remain subject to current restrictions. Provenance access requires whole-object and target-schema access; ordinary object responses expose only the presence label, not the administrator's reason.
 
-There is no hard delete, purge, automatic retirement or binding-aware branch merge. v0.3.2 adds [compatible binding migration](binding-migrations.md), which still rejects missing objects. Forks and branch-local reconciliation are supported. At most 1,000 source rows, 1,000 owned objects and 1,000 resulting objects are supported by this reference operation. Reconciliation and physical lifecycle semantics need customer agreement for production RCI use.
+There is no hard delete, purge, automatic retirement or automatic conflict resolution. v0.3.2 adds [compatible binding migration](binding-migrations.md), which still rejects missing objects. Forks and branch-local reconciliation are supported. At most 1,000 source rows, 1,000 owned objects and 1,000 resulting objects are supported by this reference operation. Reconciliation and physical lifecycle semantics need customer agreement for production RCI use.
 
 ## Catalog compatibility
 
@@ -68,3 +68,5 @@ The first successful reconciliation upgrades catalog format 3 to **4** atomicall
 ```
 
 The disposable demo approves an inspection, removes the source row, retains the object as `MISSING`, retries that decision, reintroduces the source row and restores `PRESENT`. Expected final reading: 30; status: inspected; same object identity; replay true; audit valid. No external control or write-back occurs.
+
+Reviewed binding-aware direct-fork merges are available in v0.3.3; see [merge contract](reviewed-merges.md).

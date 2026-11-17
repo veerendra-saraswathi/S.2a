@@ -8,6 +8,7 @@ import sqlite3
 from s2_platform import Context, S2Error, Forbidden, Conflict, NotFound, canonical, new_id, marking, dominates
 from s2_catalog_storage.store import Store
 from s2_catalog_storage.datasets import Datasets
+from s2_catalog_storage.merges import ReviewedMerges
 from s2_governance_control.security import Security
 from s2_ontology_kernel.kernel import Kernel
 from s2_ontology_kernel.bindings import Bindings
@@ -22,6 +23,7 @@ class Service:
         self.datasets = Datasets(self.store, self.security, self.kernel)
         self.actions = Actions(self.store, self.security, self.kernel)
         self.bindings = Bindings(self.store, self.security, self.kernel)
+        self.reviewed_merges = ReviewedMerges(self.store, self.security, self.kernel, self.bindings, self.check_project)
         self.routes = {
             'projects.create': ('admin', self.create_project),
             'projects.grant': ('admin', self.grant_project),
@@ -30,6 +32,8 @@ class Service:
             'branches.head': ('read', self.branch_head),
             'branches.fork': ('write', self.fork_branch),
             'branches.merge': ('admin', self.merge_branch),
+            'branches.merge_preview': ('admin', self.reviewed_merges.preview),
+            'branches.merge_reviewed': ('admin', self.reviewed_merges.apply),
             'datasets.create': ('write', self.datasets.create),
             'datasets.begin': ('write', self.datasets.begin),
             'datasets.stage': ('write', self.datasets.stage),
@@ -70,6 +74,9 @@ class Service:
             db.execute('CREATE TABLE IF NOT EXISTS binding_migrations('
                        'tenant TEXT NOT NULL, branch TEXT NOT NULL, idem TEXT NOT NULL, '
                        'request_hash TEXT NOT NULL, result TEXT NOT NULL, PRIMARY KEY(tenant,branch,idem))')
+            db.execute('CREATE TABLE IF NOT EXISTS branch_merges('
+                       'tenant TEXT NOT NULL, branch TEXT NOT NULL, idem TEXT NOT NULL, '
+                       'request_hash TEXT NOT NULL, result TEXT NOT NULL, PRIMARY KEY(tenant,branch,idem))')
 
     def bootstrap(self, name, clearance=0, compartments=None):
         """Host-administrator CLI only. Deliberately absent from the network API."""
@@ -104,7 +111,8 @@ class Service:
                     expected = params.get('expected_head')
                     if expected and expected != branch['head']:
                         # Idempotent transaction/invocation retries validate their own pinned base.
-                        if operation not in {'datasets.begin', 'actions.submit', 'bindings.materialize', 'bindings.migrate'}:
+                        if operation not in {'datasets.begin', 'actions.submit', 'bindings.materialize', 'bindings.migrate',
+                                              'branches.merge_reviewed'}:
                             raise Conflict('Stale branch head')
                 result = handler(db, ctx, **params)
                 self.security.audit(db, ctx, operation, params.get('branch', ctx.tenant),

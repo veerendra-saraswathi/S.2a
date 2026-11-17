@@ -1,6 +1,6 @@
 # Samanvaya 2 documentation
 
-**Version covered:** v0.3.2 · **Reviewed:** 17 November 2026 · **Stage:** Gate 1 reference foundation.
+**Version covered:** v0.3.3 · **Reviewed:** 17 November 2026 · **Stage:** Gate 1 reference foundation.
 
 [Repository landing page](../README.md) · [Quick start](guides/QUICKSTART.md) · [Documents & presentations](resources/README.md)
 
@@ -20,7 +20,7 @@
 - [Reconciliation validation](operations/reconciliation-validation-2026-11-17.md): local test evidence and limits.
 
 - [Binding migrations](architecture/binding-migrations.md): compatible changes, reviewed effect hashes and atomic publication.
-- [Migration validation](operations/migration-validation-2026-11-17.md): 245-test evidence and scope.
+- [Migration validation](operations/migration-validation-2026-11-17.md): historical 245-test evidence and scope.
 
 ## Architecture and implementation
 
@@ -56,3 +56,6 @@
 **Implemented reference** means executable functionality exists and has local test evidence. **Planned** means an architecture boundary or proposed capability exists without a delivered implementation. **Production-qualified** requires separate security, deployment, capacity and recovery evidence; this repository does not claim that status.
 
 The current code and versioned validation records describe implementation status. Future client proposals and presentation materials will be listed with their covered version and scope so that roadmap statements are not mistaken for delivered features.
+
+- [Reviewed branch merges](architecture/reviewed-merges.md): preview, coherence and conflict rules.
+- [Merge validation](operations/merge-validation-2026-11-17.md): current 296-test evidence.
