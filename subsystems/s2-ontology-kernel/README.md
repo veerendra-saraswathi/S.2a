@@ -2,7 +2,7 @@
 
 **Status:** Gate 1 reference implemented.
 
-Object and interface definitions, typed links, authoritative object state and permission-filtered reads. Distributed secondary indexes remain planned.
+Object and interface definitions, typed links, authoritative object state and permission-filtered reads. Bounded dataset-to-object bindings add atomic builds, source ownership and provenance. See [contracts](../../docs/architecture/ontology-bindings.md). Distributed secondary indexes remain planned.
 
 The Python package in this subsystem, where present, is the executable Gate 1 implementation. The boundary directories below reserve the approved decomposition; their README files do not represent implemented services.
 

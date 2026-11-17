@@ -10,6 +10,7 @@ from s2_catalog_storage.store import Store
 from s2_catalog_storage.datasets import Datasets
 from s2_governance_control.security import Security
 from s2_ontology_kernel.kernel import Kernel
+from s2_ontology_kernel.bindings import Bindings
 from s2_kinetic_actions.actions import Actions
 
 
@@ -20,6 +21,7 @@ class Service:
         self.kernel = Kernel(self.store, self.security)
         self.datasets = Datasets(self.store, self.security, self.kernel)
         self.actions = Actions(self.store, self.security, self.kernel)
+        self.bindings = Bindings(self.store, self.security, self.kernel)
         self.routes = {
             'projects.create': ('admin', self.create_project),
             'projects.grant': ('admin', self.grant_project),
@@ -48,6 +50,9 @@ class Service:
             'actions.execute': ('write', self.actions.execute),
             'audit.verify': ('admin', self.verify_audit),
             'policy.restrict': ('admin', self.restrict_policy),
+            'bindings.define': ('write', self.bindings.define),
+            'bindings.materialize': ('write', self.bindings.materialize),
+            'bindings.provenance': ('read', self.bindings.provenance),
         }
         with self.store.transaction() as db:
             db.execute('CREATE TABLE IF NOT EXISTS project_memberships('
@@ -56,6 +61,9 @@ class Service:
             db.execute('CREATE TABLE IF NOT EXISTS classification_overrides('
                        'tenant TEXT NOT NULL, project TEXT NOT NULL, resource TEXT NOT NULL, label TEXT NOT NULL, '
                        'PRIMARY KEY(tenant,project,resource))')
+            db.execute('CREATE TABLE IF NOT EXISTS binding_builds('
+                       'tenant TEXT NOT NULL, branch TEXT NOT NULL, idem TEXT NOT NULL, '
+                       'request_hash TEXT NOT NULL, result TEXT NOT NULL, PRIMARY KEY(tenant,branch,idem))')
 
     def bootstrap(self, name, clearance=0, compartments=None):
         """Host-administrator CLI only. Deliberately absent from the network API."""
@@ -90,7 +98,7 @@ class Service:
                     expected = params.get('expected_head')
                     if expected and expected != branch['head']:
                         # Idempotent transaction/invocation retries validate their own pinned base.
-                        if operation not in {'datasets.begin', 'actions.submit'}:
+                        if operation not in {'datasets.begin', 'actions.submit', 'bindings.materialize'}:
                             raise Conflict('Stale branch head')
                 result = handler(db, ctx, **params)
                 self.security.audit(db, ctx, operation, params.get('branch', ctx.tenant),
@@ -184,6 +192,8 @@ class Service:
         common = self.store.manifest(db, ctx.tenant, base)
         ours = self.store.manifest(db, ctx.tenant, expected_head)
         theirs = self.store.manifest(db, ctx.tenant, expected_source)
+        if any(key.startswith('binding/') for key in set(ours) | set(theirs)):
+            raise Conflict('Binding-aware branch merge requires a future reconciliation workflow')
         merged = dict(ours)
         conflicts = []
         for key in set(common) | set(ours) | set(theirs):

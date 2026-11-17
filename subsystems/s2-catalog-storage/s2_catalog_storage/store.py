@@ -67,7 +67,7 @@ class Store:
         self.file_storage = None
         with self.connect() as db:
             exists = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_version'").fetchone()
-            if exists and [row[0] for row in db.execute('SELECT version FROM schema_version')] not in ([1], [2]):
+            if exists and [row[0] for row in db.execute('SELECT version FROM schema_version')] not in ([1], [2], [3]):
                 raise Conflict('Unsupported database schema version; explicit migration required')
             db.executescript(SCHEMA)
         from s2_platform import S2Error
@@ -87,8 +87,9 @@ class Store:
                 from s2_catalog_storage.file_storage import FileStorage
                 self.file_storage = FileStorage(root, backend)
                 # Old v0.1 code must refuse a database containing file-backed revisions.
-                db.execute('DELETE FROM schema_version')
-                db.execute('INSERT INTO schema_version VALUES(2)')
+                if db.execute('SELECT version FROM schema_version').fetchone()[0] < 2:
+                    db.execute('DELETE FROM schema_version')
+                    db.execute('INSERT INTO schema_version VALUES(2)')
             db.execute('INSERT INTO storage_config VALUES(1,?,?) '
                        'ON CONFLICT(id) DO UPDATE SET backend=excluded.backend,warehouse=excluded.warehouse',
                        (backend, root if backend != 'json' else None))

@@ -5,17 +5,17 @@
 | Document control | Value |
 | --- | --- |
 | Product | Samanvaya 2 — Enterprise Data Operating System and Operational Ontology Platform |
-| Version covered | 0.2.0 |
-| Review date | 15 November 2026 |
+| Version covered | 0.3.0 |
+| Review date | 17 November 2026 |
 | Maturity | Executable Gate 1 reference foundation |
 | Ownership | Veerendra Kiran Bidarkota — Proprietary Commercial Software |
-| Validation baseline | 104 local tests; successful Iceberg demo and storage integrity report |
+| Validation baseline | 164 local tests; successful Iceberg binding/approved-Action/refresh demo |
 
 ## 1. Purpose and current scope
 
 S2 establishes a common platform for versioned enterprise data, typed operational objects and authorized state changes. The full product architecture includes integration, data engineering, Ontology, application builders, developer SDKs, analytics and governed AI. The delivered slice establishes the shared transaction and security semantics on which those capabilities will depend.
 
-The reference implementation supports local execution with JSON, Parquet or Iceberg-backed dataset snapshots. It includes isolated tenants/projects, branch manifests, object schemas/interfaces/links, internal Actions with approvals and audit evidence. It does not yet implement automated ingestion, dataset-to-object materialization, a graphical console or an LLM runtime.
+The reference implementation supports local execution with JSON, Parquet or Iceberg-backed dataset snapshots. It includes isolated tenants/projects, branch manifests, object schemas/interfaces/links, internal Actions with approvals and audit evidence. It does not yet implement automated ingestion, a graphical console or an LLM runtime.
 
 ## 2. Request and authorization model
 
@@ -66,7 +66,7 @@ Interfaces declare shared property contracts. Implementations must satisfy prope
 
 The OSv2 foundation is the authoritative scalar object store and its governed read paths. Advanced search/vector/spatial/media/time-series projections remain planned. Names currently act as schema identifiers, so stable-ID rename/move migrations are still required for general schema evolution.
 
-Dataset-to-Ontology source bindings are the next milestone. In the present demo, object creation is explicit. The dataset and object are not maintained in automatic synchronization.
+A bounded dataset-to-Ontology materializer now supports explicit builds from committed snapshots. The original demo still creates objects explicitly; `tooling/bindings_demo.py` demonstrates automatic object construction on demand. Continuous synchronization is not implemented. See [binding contracts](architecture/ontology-bindings.md).
 
 ## 6. Actions and approval controls
 
@@ -103,7 +103,7 @@ Stop the application and back up both catalog and warehouse. File storage pins a
 
 ## 9. Verification and qualification
 
-The 104-test baseline comprises 26 foundation tests on each of JSON, Parquet and Iceberg, plus 13 storage-specific tests on each file backend. Coverage includes tenant isolation, classification, branch conflicts, atomic edits, approval revalidation, retries, real-format inspection, corrupted files and subprocess crashes on both sides of catalog commit.
+The v0.3 suite adds 60 binding tests (20 per backend), for 164 passing tests. The original 104-test baseline comprises 26 foundation tests on each of JSON, Parquet and Iceberg, plus 13 storage-specific tests on each file backend. Coverage includes tenant isolation, classification, branch conflicts, atomic edits, approval revalidation, retries, real-format inspection, corrupted files and subprocess crashes on both sides of catalog commit.
 
 The successful local demonstration additionally confirmed an internal maintenance Action, a valid audit chain and a clean Iceberg storage report. The [validation record](operations/storage-validation.md) documents the environment and limits.
 
@@ -111,6 +111,6 @@ These checks establish reference behaviour. They do not establish distributed th
 
 ## 10. Next implementation contract
 
-Dataset-to-Ontology bindings should introduce versioned source mappings, deterministic object identity, pinned input snapshots and observable materialization outcomes. They must define how source updates, source deletions and approved object edits interact before automatic synchronization is enabled.
+Bindings now supply immutable mappings, deterministic identity, pinned inputs and atomic materialization. Source refresh preserves Action-owned fields. Source disappearance and merges involving bindings are rejected until explicit reconciliation is implemented.
 
 Acceptance should demonstrate mapping validation, branch isolation, current-policy enforcement, replay-safe builds, source/delete handling and a failure that leaves the previous consistent publication intact. See the [roadmap](ROADMAP.md) for the wider delivery sequence.

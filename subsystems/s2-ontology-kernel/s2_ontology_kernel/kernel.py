@@ -30,6 +30,11 @@ class Kernel:
                     row['marking'] = self.security.effective(db, ctx, key + '/row/' + identity, row.get('marking'))
             elif key.startswith(('object/', 'link/', 'linktype/')):
                 payload['marking'] = self.security.effective(db, ctx, key, payload.get('marking'))
+                if key.startswith('object/') and 'source_binding' in payload:
+                    from .bindings import joined
+                    for dependency in payload['source_binding']['policy_resources']:
+                        payload['marking'] = joined(payload['marking'],
+                            self.security.effective(db, ctx, dependency, None))
         return payload
 
     def validate_definition(self, definition):
@@ -95,7 +100,7 @@ class Kernel:
                 raise Forbidden("Property marking downgrade denied")
 
     def check_object_write(self, db, ctx, manifest, object_id, type_name, values, label,
-                           expected_revision=None):
+                           expected_revision=None, materializing=False):
         definition = self.resource(db, ctx, manifest, "type/" + type_name)
         self.check_definition_access(ctx, definition)
         label = self.security.effective(db, ctx, 'object/' + object_id, label)
@@ -112,7 +117,14 @@ class Kernel:
                 raise Conflict("Object type is immutable")
             if not dominates(marking(label), old["marking"]):
                 raise Forbidden("Object marking downgrade denied")
-        return {"id": object_id, "type": type_name, "values": values, "marking": marking(label)}
+            if 'source_binding' in old and not materializing:
+                for prop in old['source_binding']['source_properties']:
+                    if (prop in values) != (prop in old['values']) or values.get(prop) != old['values'].get(prop):
+                        raise Forbidden('Source-owned properties can only change through materialization')
+        result = {"id": object_id, "type": type_name, "values": values, "marking": marking(label)}
+        if previous and 'source_binding' in old:
+            result['source_binding'] = old['source_binding']
+        return result
 
     def visible_object(self, db, ctx, manifest, object_id):
         obj = self.resource(db, ctx, manifest, "object/" + object_id)

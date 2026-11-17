@@ -1,6 +1,6 @@
 # Samanvaya 2 documentation
 
-**Version covered:** v0.2.0 · **Reviewed:** 15 November 2026 · **Stage:** Gate 1 reference foundation.
+**Version covered:** v0.3.0 · **Reviewed:** 17 November 2026 · **Stage:** Gate 1 reference foundation.
 
 [Repository landing page](../README.md) · [Quick start](guides/QUICKSTART.md) · [Documents & presentations](resources/README.md)
 
@@ -12,6 +12,9 @@
 | Developer | [Quick start](guides/QUICKSTART.md) → [API reference](api-contracts/gate1.md) → [Metamodel](metamodel/gate1.md) |
 | Systems engineer | [Transaction boundary](architecture/gate1.md) → [File-storage protocol](architecture/file-storage.md) → [Security](../SECURITY.md) |
 | Programme stakeholder | [Current status](parity-matrix/gate1.md) → [Roadmap](ROADMAP.md) → [Document register](resources/README.md) |
+
+- [Ontology binding contract](architecture/ontology-bindings.md): APIs, ownership, policy propagation and current limits.
+- [Bindings checkpoint](operations/session-checkpoint-2026-11-17.md): 164-test validation and session handover.
 
 ## Architecture and implementation
 

@@ -4,8 +4,8 @@
 | --- | --- | --- |
 | Connector fabric | Ownership scaffold | Connectors, CDC, offline agents, schema inference, HyperAuto |
 | Catalog storage | JSON/Parquet/Iceberg snapshots, dataset transactions, manifests, forks, conservative merges, read-only recovery inventory | Distributed/object-store adapters, GC/retention, general merge bases and row conflicts, protected promotion |
-| Compute pipelines | Ownership scaffold | Visual DAG, compiler, workers, source bindings, health checks |
-| Ontology kernel | Types/interfaces/links, scalar validation, object revisions, governed reads | Stable schema IDs/renames, indexed query language, spatial/media/time-series, scale |
+| Compute pipelines | Ownership scaffold | Visual DAG, compiler, workers, scheduled source integration, health checks |
+| Ontology kernel | Types/interfaces/links, scalar validation, object revisions, governed reads, bounded snapshot bindings and provenance | Binding migration/deletion/merge reconciliation, stable schema IDs/renames, indexed query language, spatial/media/time-series, scale |
 | Kinetic Actions | Typed internal edits, quorum approvals, atomicity, idempotency | Sandboxed FoO, full queue lifecycle, external outbox and reconciliation |
 | OSDK | TypeScript/Python/Java generator boundaries | Actual generation, publishing and compatibility tests |
 | Workshop/Slate | Ownership scaffold | UI builders, stateful widgets and isolated custom runtime |

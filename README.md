@@ -6,7 +6,7 @@
 
 **Governed data · Versioned Ontology · Transactional Actions**
 
-`v0.2.0` · `Gate 1 reference foundation` · `104 tests passed locally` · `Proprietary commercial software`
+`v0.3.0` · `Gate 1 reference foundation` · `164 tests passed locally` · `Proprietary commercial software`
 
 [Architecture](docs/architecture/platform-overview.md) · [Tech stack](docs/TECH_STACK.md) · [Technical document](docs/TECHNICAL_OVERVIEW.md) · [Quick start](docs/guides/QUICKSTART.md) · [Documents & presentations](docs/resources/README.md)
 
@@ -26,17 +26,20 @@ The long-term architecture targets capabilities associated with **Palantir Found
 
 ## Current milestone
 
-| Area | Available in v0.2.0 |
+| Area | Available in v0.3.0 |
 | --- | --- |
 | **Governance** | Tenant/project isolation, roles, classification levels and compartments, property redaction and live restrictions across branches |
 | **Versioned data** | JSON, local Parquet and local Iceberg v2 snapshots; staged APPEND/UPDATE/DELETE transactions; retry-safe COMMIT |
 | **Branching** | Immutable cross-resource manifests, isolated forks, expected-head publication and conservative three-way merges |
 | **Ontology** | Typed object schemas, interfaces, typed links, object revisions and permission-filtered reads |
+| **Source bindings** | Bounded atomic dataset-to-object builds, pinned provenance, source-field ownership and live source-policy propagation |
 | **Actions** | Atomic edits across multiple objects, distinct-admin approval quorum and execution-time revalidation |
 | **Evidence** | Per-tenant hash-chained audit records, snapshot integrity checks and a read-only storage recovery report |
 | **Developer access** | Python application boundary, CLI, loopback development API and synthetic end-to-end demo |
 
 **Validation baseline — 15 November 2026:** 104 tests passed locally across JSON, Parquet and Iceberg. The Iceberg demo completed an internal Action, verified its audit chain and reported no broken or unreferenced artifacts. See the [validation record](docs/operations/storage-validation.md) for coverage and limits. This is functional validation, not a performance or production-readiness claim.
+
+**Bindings validation — 17 November 2026:** 164 tests passed locally with storage suites required: the original 104 plus 60 binding tests across JSON, Parquet and Iceberg. See [binding contracts](docs/architecture/ontology-bindings.md) and the [session checkpoint](docs/operations/session-checkpoint-2026-11-17.md).
 
 ## Architecture at a glance
 
@@ -104,7 +107,7 @@ S2_REQUIRE_STORAGE_TESTS=1 .venv/bin/python -m unittest discover -s tests -v
 .venv/bin/python tooling/s2.py --db .local/iceberg-demo.db storage-report
 ```
 
-Expected results: **104 passing tests**, Action status `COMMITTED`, audit `valid: true` and an empty `broken_references` list. A fresh successful demo also has no unreferenced artifacts. Each demo creates a new synthetic tenant; it sends no external commands and prints no authentication token.
+Expected results: **164 passing tests**, Action status `COMMITTED`, audit `valid: true` and an empty `broken_references` list. A fresh successful demo also has no unreferenced artifacts. Each demo creates a new synthetic tenant; it sends no external commands and prints no authentication token.
 
 For the dependency-free JSON demonstration:
 
@@ -132,7 +135,7 @@ Initial installation of the storage dependencies requires package access. Once i
 
 ## Next development milestone
 
-**Dataset-to-Ontology bindings and governed materialization.** A committed dataset will be mapped to typed objects with explicit source provenance, deletion semantics and rules for preserving approved operational edits.
+**Binding reconciliation and migration.** The first bounded materializer is implemented. Next work covers deletion policies, binding/schema changes and safe merges of branches containing bindings, followed by automatic ingestion. See [the implemented contract](docs/architecture/ontology-bindings.md).
 
 Subsequent milestones cover connector/pipeline execution, typed SDKs, operational application builders and governed AI. The [roadmap](docs/ROADMAP.md) distinguishes these planned capabilities from today's executable code.
 
