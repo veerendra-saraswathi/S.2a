@@ -14,7 +14,7 @@ sys.path[:0] = [str(p) for p in (ROOT / 'subsystems').iterdir() if p.is_dir()]
 from s2.service import Service
 
 
-def run(backend):
+def run(backend, reconcile=False):
     with tempfile.TemporaryDirectory(prefix='s2-binding-demo-') as folder:
         service = Service(Path(folder) / 'demo.db', storage_backend=backend)
         token = service.bootstrap('Synthetic engineering demonstration', 3, ['ENG'])['token']
@@ -62,8 +62,35 @@ def run(backend):
         final = call('objects.get', branch=branch, object_id=oid)
         assert final['values'] == {'asset_id': 'pump-01', 'reading': 25, 'status': 'inspected'}
         assert retry == build
+        reconciliation = None
+        if reconcile:
+            tx = call('datasets.begin', branch=branch, expected_head=head(), dataset='equipment',
+                      operation='DELETE', idempotency_key='missing-source')['transaction']
+            call('datasets.stage', branch=branch, transaction=tx, rows=[{'values': {'asset_id': 'pump-01'}}])
+            call('datasets.commit', branch=branch, transaction=tx)
+            preview = call('bindings.preview', branch=branch, expected_head=head(), binding='equipment-assets')
+            retained = call('bindings.materialize', branch=branch, expected_head=preview['commit'],
+                binding='equipment-assets', idempotency_key='retain-missing', missing_policy='retain',
+                expected_missing=preview['missing'], reason='Keep laboratory history while source absence is investigated')
+            retained_obj = call('objects.get', branch=branch, object_id=oid)
+            assert retained_obj['source_presence'] == 'MISSING'
+            assert retained_obj['values']['status'] == 'inspected'
+            repeated = call('bindings.materialize', branch=branch, expected_head=preview['commit'],
+                binding='equipment-assets', idempotency_key='retain-missing', missing_policy='retain',
+                expected_missing=preview['missing'], reason='Keep laboratory history while source absence is investigated')
+            assert repeated == retained
+            ingest('APPEND', 30, 'source-returns')
+            call('bindings.materialize', branch=branch, expected_head=head(),
+                 binding='equipment-assets', idempotency_key='return-build')
+            final = call('objects.get', branch=branch, object_id=oid)
+            assert final['source_presence'] == 'PRESENT'
+            assert final['values'] == {'asset_id': 'pump-01', 'reading': 30, 'status': 'inspected'}
+            reconciliation = {'retained_presence': retained_obj['source_presence'],
+                              'restored_presence': final['source_presence'], 'same_object_id': True,
+                              'retention_replay_same_result': repeated == retained}
         return {'storage': backend, 'object': final, 'replay_same_result': retry == build,
                 'approved_status_preserved': True,
+                'reconciliation': reconciliation,
                 'provenance': call('bindings.provenance', branch=branch, object_id=oid),
                 'audit': call('audit.verify'), 'external_effects': False,
                 'database': 'temporary; removed after demonstration'}
@@ -72,4 +99,6 @@ def run(backend):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--storage', choices=['json', 'parquet', 'iceberg'], default='json')
-    print(json.dumps(run(parser.parse_args().storage), indent=2))
+    parser.add_argument('--reconcile', action='store_true', help='Also demonstrate retained absence and source return')
+    args = parser.parse_args()
+    print(json.dumps(run(args.storage, args.reconcile), indent=2))

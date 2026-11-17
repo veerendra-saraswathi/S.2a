@@ -1,6 +1,6 @@
 # Samanvaya 2 documentation
 
-**Version covered:** v0.3.0 · **Reviewed:** 17 November 2026 · **Stage:** Gate 1 reference foundation.
+**Version covered:** v0.3.1 · **Reviewed:** 17 November 2026 · **Stage:** Gate 1 reference foundation.
 
 [Repository landing page](../README.md) · [Quick start](guides/QUICKSTART.md) · [Documents & presentations](resources/README.md)
 
@@ -15,6 +15,9 @@
 
 - [Ontology binding contract](architecture/ontology-bindings.md): APIs, ownership, policy propagation and current limits.
 - [Bindings checkpoint](operations/session-checkpoint-2026-11-17.md): 164-test validation and session handover.
+
+- [Source reconciliation](architecture/source-reconciliation.md): missing objects, explicit retention and source return.
+- [Reconciliation validation](operations/reconciliation-validation-2026-11-17.md): local test evidence and limits.
 
 ## Architecture and implementation
 

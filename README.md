@@ -6,7 +6,7 @@
 
 **Governed data · Versioned Ontology · Transactional Actions**
 
-`v0.3.0` · `Gate 1 reference foundation` · `164 tests passed locally` · `Proprietary commercial software`
+`v0.3.1` · `Gate 1 reference foundation` · `197 tests passed locally` · `Proprietary commercial software`
 
 [Architecture](docs/architecture/platform-overview.md) · [Tech stack](docs/TECH_STACK.md) · [Technical document](docs/TECHNICAL_OVERVIEW.md) · [Quick start](docs/guides/QUICKSTART.md) · [Documents & presentations](docs/resources/README.md)
 
@@ -26,7 +26,7 @@ The long-term architecture targets capabilities associated with **Palantir Found
 
 ## Current milestone
 
-| Area | Available in v0.3.0 |
+| Area | Available in v0.3.1 |
 | --- | --- |
 | **Governance** | Tenant/project isolation, roles, classification levels and compartments, property redaction and live restrictions across branches |
 | **Versioned data** | JSON, local Parquet and local Iceberg v2 snapshots; staged APPEND/UPDATE/DELETE transactions; retry-safe COMMIT |
@@ -39,7 +39,9 @@ The long-term architecture targets capabilities associated with **Palantir Found
 
 **Validation baseline — 15 November 2026:** 104 tests passed locally across JSON, Parquet and Iceberg. The Iceberg demo completed an internal Action, verified its audit chain and reported no broken or unreferenced artifacts. See the [validation record](docs/operations/storage-validation.md) for coverage and limits. This is functional validation, not a performance or production-readiness claim.
 
-**Bindings validation — 17 November 2026:** 164 tests passed locally with storage suites required: the original 104 plus 60 binding tests across JSON, Parquet and Iceberg. See [binding contracts](docs/architecture/ontology-bindings.md) and the [session checkpoint](docs/operations/session-checkpoint-2026-11-17.md).
+**Bindings validation — 17 November 2026:** 197 tests passed locally with storage suites required: the original 104 plus 60 binding tests across JSON, Parquet and Iceberg. See [binding contracts](docs/architecture/ontology-bindings.md) and the [session checkpoint](docs/operations/session-checkpoint-2026-11-17.md).
+
+**Reconciliation update:** explicit administrator-reviewed retention of missing source objects and same-identity source return are now available. The full suite has 197 passing tests, including 33 reconciliation tests. See [source reconciliation](docs/architecture/source-reconciliation.md).
 
 ## Architecture at a glance
 
@@ -107,7 +109,7 @@ S2_REQUIRE_STORAGE_TESTS=1 .venv/bin/python -m unittest discover -s tests -v
 .venv/bin/python tooling/s2.py --db .local/iceberg-demo.db storage-report
 ```
 
-Expected results: **164 passing tests**, Action status `COMMITTED`, audit `valid: true` and an empty `broken_references` list. A fresh successful demo also has no unreferenced artifacts. Each demo creates a new synthetic tenant; it sends no external commands and prints no authentication token.
+Expected results: **197 passing tests**, Action status `COMMITTED`, audit `valid: true` and an empty `broken_references` list. A fresh successful demo also has no unreferenced artifacts. Each demo creates a new synthetic tenant; it sends no external commands and prints no authentication token.
 
 For the dependency-free JSON demonstration:
 
@@ -135,7 +137,7 @@ Initial installation of the storage dependencies requires package access. Once i
 
 ## Next development milestone
 
-**Binding reconciliation and migration.** The first bounded materializer is implemented. Next work covers deletion policies, binding/schema changes and safe merges of branches containing bindings, followed by automatic ingestion. See [the implemented contract](docs/architecture/ontology-bindings.md).
+**Binding/schema migration and safe branch merges.** Bounded materialization and explicit retained-absence reconciliation are implemented. Next work covers binding/schema changes and safe merges of branches containing bindings, followed by automatic ingestion. See [the implemented contract](docs/architecture/ontology-bindings.md).
 
 Subsequent milestones cover connector/pipeline execution, typed SDKs, operational application builders and governed AI. The [roadmap](docs/ROADMAP.md) distinguishes these planned capabilities from today's executable code.
 

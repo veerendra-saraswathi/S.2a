@@ -53,6 +53,7 @@ class Service:
             'bindings.define': ('write', self.bindings.define),
             'bindings.materialize': ('write', self.bindings.materialize),
             'bindings.provenance': ('read', self.bindings.provenance),
+            'bindings.preview': ('read', self.bindings.preview),
         }
         with self.store.transaction() as db:
             db.execute('CREATE TABLE IF NOT EXISTS project_memberships('

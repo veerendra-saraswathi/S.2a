@@ -36,7 +36,7 @@ S2_REQUIRE_STORAGE_TESTS=1 .venv/bin/python -m unittest discover -s tests -v
 python3 tooling/check_headers.py
 ```
 
-The v0.3 baseline is **164 passing tests**, with no skipped file-storage suites. See the [binding validation record](../operations/session-checkpoint-2026-11-17.md).
+The v0.3.1 baseline is **197 passing tests**, with no skipped file-storage suites. See the [binding validation record](../operations/reconciliation-validation-2026-11-17.md).
 
 ## 4. Demonstrate Iceberg and verify artifacts
 
@@ -114,3 +114,5 @@ Use `git --no-pager diff --cached --stat` when reviewing staged changes without 
 ```
 
 This uses a disposable database. Expected: `replay_same_result: true`, `approved_status_preserved: true`, reading 25, status `inspected`, and `audit.valid: true`. See [contracts and format-3 upgrade guidance](../architecture/ontology-bindings.md).
+
+For retained absence and source return, run `.venv/bin/python tooling/bindings_demo.py --storage iceberg --reconcile`. Expected final reading: 30, status: inspected, presence: PRESENT, with MISSING recorded earlier in the demonstration.

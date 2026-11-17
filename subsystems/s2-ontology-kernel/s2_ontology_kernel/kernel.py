@@ -124,6 +124,8 @@ class Kernel:
         result = {"id": object_id, "type": type_name, "values": values, "marking": marking(label)}
         if previous and 'source_binding' in old:
             result['source_binding'] = old['source_binding']
+        if previous and 'source_state' in old:
+            result['source_state'] = old['source_state']
         return result
 
     def visible_object(self, db, ctx, manifest, object_id):
@@ -133,8 +135,11 @@ class Kernel:
             raise NotFound("Object not found")
         values = {name: value for name, value in obj["values"].items()
                   if self.security.allowed(ctx, definition["properties"][name].get("marking"))}
-        return {"id": obj["id"], "type": obj["type"], "values": values,
-                "revision": manifest["object/" + object_id]}
+        result = {"id": obj["id"], "type": obj["type"], "values": values,
+                  "revision": manifest["object/" + object_id]}
+        if 'source_state' in obj:
+            result['source_presence'] = obj['source_state']['presence']
+        return result
 
     def validate_manifest(self, db, tenant, manifest):
         for key in manifest:

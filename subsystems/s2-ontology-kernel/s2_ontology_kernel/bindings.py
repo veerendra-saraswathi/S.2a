@@ -72,15 +72,50 @@ class Bindings:
                     manifest['dataset/' + dataset])['schema']), 'marking': label}
         manifest[key] = self.store.put_revision(db, ctx.tenant, 'source_binding', spec)
         # Prevent earlier executables from opening catalogs with derived-policy objects.
-        db.execute('DELETE FROM schema_version')
-        db.execute('INSERT INTO schema_version VALUES(3)')
+        if db.execute('SELECT version FROM schema_version').fetchone()[0] < 3:
+            db.execute('DELETE FROM schema_version')
+            db.execute('INSERT INTO schema_version VALUES(3)')
         return {'commit': self.store.publish(db, ctx, branch, expected_head, manifest),
                 'revision': manifest[key]}
 
-    def materialize(self, db, ctx, branch, expected_head, binding, idempotency_key):
+    def _owned(self, db, ctx, manifest, binding):
+        owned = {}
+        for key in manifest:
+            if key.startswith('object/'):
+                raw = self.store.revision(db, ctx.tenant, manifest[key])
+                if raw.get('source_binding', {}).get('binding') == binding:
+                    obj = self.kernel.resource(db, ctx, manifest, key)
+                    self.security.check_marking(ctx, obj['marking'])
+                    owned[key[7:]] = obj
+        return owned
+
+    def preview(self, db, ctx, branch, expected_head, binding):
+        manifest = self.store.manifest(db, ctx.tenant, expected_head)
+        spec, source, target = self._inputs(db, ctx, manifest, binding)
+        owned = self._owned(db, ctx, manifest, binding)
+        present = {'bound-' + digest({'namespace': spec['namespace'],
+                    'key': canonical(row['values'][spec['primary_key']])}) for row in source['rows']}
+        return {'commit': expected_head, 'dataset_revision': manifest['dataset/' + spec['dataset']],
+                'missing': {oid: manifest['object/' + oid] for oid in sorted(set(owned) - present)},
+                'note': 'Absence from this snapshot is not evidence of physical retirement.'}
+
+    def materialize(self, db, ctx, branch, expected_head, binding, idempotency_key,
+                    missing_policy='reject', expected_missing=None, reason=None):
         if not isinstance(binding, str) or not isinstance(idempotency_key, str) or not 1 <= len(idempotency_key) <= 200:
             raise S2Error('Binding and bounded idempotency key required')
-        request = digest({'actor': ctx.principal, 'base': expected_head, 'binding': binding})
+        if missing_policy not in ('reject', 'retain'):
+            raise S2Error('missing_policy must be reject or retain')
+        request_data = {'actor': ctx.principal, 'base': expected_head, 'binding': binding}
+        if missing_policy == 'retain':
+            self.security.require(ctx, 'admin')
+            if (not isinstance(expected_missing, dict) or not expected_missing or
+                    any(not isinstance(k, str) or not isinstance(v, str) for k, v in expected_missing.items()) or
+                    not isinstance(reason, str) or not 1 <= len(reason.strip()) <= 1000):
+                raise S2Error('Retention requires a nonempty preview revision map and a reason of 1 to 1000 characters')
+            request_data.update(missing_policy=missing_policy, expected_missing=expected_missing, reason=reason)
+        elif expected_missing is not None or reason is not None:
+            raise S2Error('Reconciliation parameters require retain policy')
+        request = digest(request_data)
         replay = db.execute('SELECT * FROM binding_builds WHERE tenant=? AND branch=? AND idem=?',
                             (ctx.tenant, branch, idempotency_key)).fetchone()
         if replay and replay['request_hash'] != request:
@@ -104,12 +139,9 @@ class Bindings:
                 digest(self.store.revision(db, ctx.tenant, manifest['dataset/' + spec['dataset']])['schema'])
                 != spec['source_schema_hash']):
             raise Conflict('Schema changed; explicit binding migration required')
-        owned = {}
-        for key in manifest:
-            if key.startswith('object/'):
-                obj = self.store.revision(db, ctx.tenant, manifest[key])
-                if obj.get('source_binding', {}).get('binding') == binding:
-                    owned[key[7:]] = obj
+        owned = self._owned(db, ctx, manifest, binding)
+        if len(owned) > 1000:
+            raise S2Error('Reference reconciliation is limited to 1000 owned objects')
         candidates, seen = {}, set()
         for row in source['rows']:
             identity = canonical(row['values'][spec['primary_key']])
@@ -144,9 +176,34 @@ class Bindings:
                 'source_key': row['values'][spec['primary_key']], 'type_revision': spec['type_revision'],
                 'source_properties': sorted(spec['mappings']), 'property_sources': spec['mappings'],
                 'policy_resources': dependencies, 'base_commit': expected_head}
+            if old and 'source_state' in old:
+                obj['source_state'] = {**old['source_state'], 'presence': 'PRESENT',
+                                      'observed_dataset_revision': manifest['dataset/' + spec['dataset']]}
             candidates[oid] = obj
-        if set(owned) - set(candidates):
+        missing = {oid: manifest['object/' + oid] for oid in sorted(set(owned) - set(candidates))}
+        if missing_policy == 'retain':
+            if missing != expected_missing:
+                raise Conflict('Missing object set or revisions differ from the reviewed preview')
+            for oid in missing:
+                old = owned[oid]
+                label = joined(old['marking'], source['schema'].get('marking'), target.get('marking'),
+                    *(p.get('marking') for p in source['schema']['properties'].values()),
+                    *(p.get('marking') for p in target['properties'].values()))
+                obj = self.kernel.check_object_write(db, ctx, manifest, oid, old['type'], old['values'],
+                                                     label, missing[oid], materializing=True)
+                obj['source_state'] = {'presence': 'MISSING', 'observed_dataset_revision':
+                    manifest['dataset/' + spec['dataset']], 'last_reconciliation': {
+                        'policy': 'retain', 'reason': reason.strip(), 'actor': ctx.principal,
+                        'base_commit': expected_head, 'prior_object_revision': missing[oid],
+                        'absence_dataset_revision': manifest['dataset/' + spec['dataset']]}}
+                candidates[oid] = obj
+        elif missing:
             raise Conflict('Source rows disappeared; deletion reconciliation is required')
+        if len(candidates) > 1000:
+            raise S2Error('Reference materialization is limited to 1000 resulting objects')
+        if any('source_state' in obj for obj in candidates.values()):
+            db.execute('DELETE FROM schema_version')
+            db.execute('INSERT INTO schema_version VALUES(4)')
         versions = {}
         for oid, obj in candidates.items():
             versions[oid] = self.store.put_revision(db, ctx.tenant, 'object', obj)
@@ -167,4 +224,4 @@ class Bindings:
         self.security.check_marking(ctx, obj['marking'])
         self.kernel.check_definition_access(ctx, self.kernel.resource(db, ctx, manifest, 'type/' + obj['type']))
         return {'commit': head, 'object_revision': manifest['object/' + object_id],
-                'source_binding': obj.get('source_binding')}
+                'source_binding': obj.get('source_binding'), 'source_state': obj.get('source_state')}

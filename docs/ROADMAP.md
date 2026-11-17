@@ -2,7 +2,7 @@
 
 [Repository](../README.md) · [Documentation index](README.md) · [Current implementation matrix](parity-matrix/gate1.md)
 
-This roadmap describes the engineering sequence for the proprietary S2 enterprise platform. It is not a delivery-date, budget or production-acceptance commitment. The current baseline is **v0.3.0**, validated locally with 164 tests.
+This roadmap describes the engineering sequence for the proprietary S2 enterprise platform. It is not a delivery-date, budget or production-acceptance commitment. The current baseline is **v0.3.1**, validated locally with 197 tests.
 
 ## Delivered foundation
 
@@ -15,7 +15,7 @@ Gate 1 remains a reference foundation. Production scale, high availability and f
 
 ## In progress — Dataset-to-Ontology integration
 
-**First slice delivered:** explicit bounded builds, immutable mappings, source ownership, pinned provenance, live source-policy propagation and 60 new tests. Binding migration, deletion reconciliation, binding-aware merges and scheduling remain open. See [implementation details](architecture/ontology-bindings.md).
+**First slice delivered:** explicit bounded builds, immutable mappings, source ownership, pinned provenance, live source-policy propagation and 60 new tests. Explicit reviewed retention and source return are now implemented. Binding migration, hard-deletion semantics, binding-aware merges and scheduling remain open. See [implementation details](architecture/ontology-bindings.md).
 
 **Overall objective:** materialize governed objects from committed dataset snapshots through versioned mappings.
 
