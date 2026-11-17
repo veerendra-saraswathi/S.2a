@@ -1,6 +1,6 @@
 # Samanvaya 2 documentation
 
-**Version covered:** v0.3.1 · **Reviewed:** 17 November 2026 · **Stage:** Gate 1 reference foundation.
+**Version covered:** v0.3.2 · **Reviewed:** 17 November 2026 · **Stage:** Gate 1 reference foundation.
 
 [Repository landing page](../README.md) · [Quick start](guides/QUICKSTART.md) · [Documents & presentations](resources/README.md)
 
@@ -18,6 +18,9 @@
 
 - [Source reconciliation](architecture/source-reconciliation.md): missing objects, explicit retention and source return.
 - [Reconciliation validation](operations/reconciliation-validation-2026-11-17.md): local test evidence and limits.
+
+- [Binding migrations](architecture/binding-migrations.md): compatible changes, reviewed effect hashes and atomic publication.
+- [Migration validation](operations/migration-validation-2026-11-17.md): 245-test evidence and scope.
 
 ## Architecture and implementation
 

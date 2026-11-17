@@ -67,7 +67,7 @@ class Store:
         self.file_storage = None
         with self.connect() as db:
             exists = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_version'").fetchone()
-            if exists and [row[0] for row in db.execute('SELECT version FROM schema_version')] not in ([1], [2], [3], [4]):
+            if exists and [row[0] for row in db.execute('SELECT version FROM schema_version')] not in ([1], [2], [3], [4], [5]):
                 raise Conflict('Unsupported database schema version; explicit migration required')
             db.executescript(SCHEMA)
         from s2_platform import S2Error

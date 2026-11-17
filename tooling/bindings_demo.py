@@ -14,7 +14,7 @@ sys.path[:0] = [str(p) for p in (ROOT / 'subsystems').iterdir() if p.is_dir()]
 from s2.service import Service
 
 
-def run(backend, reconcile=False):
+def run(backend, reconcile=False, migrate=False):
     with tempfile.TemporaryDirectory(prefix='s2-binding-demo-') as folder:
         service = Service(Path(folder) / 'demo.db', storage_backend=backend)
         token = service.bootstrap('Synthetic engineering demonstration', 3, ['ENG'])['token']
@@ -88,9 +88,31 @@ def run(backend, reconcile=False):
             reconciliation = {'retained_presence': retained_obj['source_presence'],
                               'restored_presence': final['source_presence'], 'same_object_id': True,
                               'retention_replay_same_result': repeated == retained}
+        migration = None
+        if migrate:
+            expanded = {'properties': {**target['properties'],
+                         'reading_copy': {'type': 'integer'}, 'review_note': {'type': 'string'}}}
+            call('ontology.define', branch=branch, expected_head=head(), name='Asset', definition=expanded)
+            params = dict(branch=branch, expected_head=head(), binding='equipment-assets',
+                mappings={'asset_id': 'asset_id', 'reading': 'reading', 'reading_copy': 'reading'},
+                action_properties=['status', 'review_note'],
+                initial_values={'status': 'pending', 'review_note': 'unreviewed'},
+                reason='Adopt additional engineering fields while preserving approved inspection')
+            plan = call('bindings.migration_preview', **params)
+            applied = call('bindings.migrate', **params, plan_hash=plan['plan_hash'], idempotency_key='schema-update')
+            repeated = call('bindings.migrate', **params, plan_hash=plan['plan_hash'], idempotency_key='schema-update')
+            final = call('objects.get', branch=branch, object_id=oid)
+            assert final['values']['status'] == 'inspected'
+            assert final['values']['reading_copy'] == final['values']['reading']
+            assert final['values']['review_note'] == 'unreviewed'
+            assert applied == repeated
+            migration = {'same_object_id': True, 'approved_status_preserved': True,
+                         'replay_same_result': applied == repeated,
+                         'binding_revision_changed': applied['binding_revision'] != applied['previous_binding_revision']}
         return {'storage': backend, 'object': final, 'replay_same_result': retry == build,
                 'approved_status_preserved': True,
                 'reconciliation': reconciliation,
+                'migration': migration,
                 'provenance': call('bindings.provenance', branch=branch, object_id=oid),
                 'audit': call('audit.verify'), 'external_effects': False,
                 'database': 'temporary; removed after demonstration'}
@@ -100,5 +122,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--storage', choices=['json', 'parquet', 'iceberg'], default='json')
     parser.add_argument('--reconcile', action='store_true', help='Also demonstrate retained absence and source return')
+    parser.add_argument('--migrate', action='store_true', help='Also preview and apply a compatible binding migration')
     args = parser.parse_args()
-    print(json.dumps(run(args.storage, args.reconcile), indent=2))
+    print(json.dumps(run(args.storage, args.reconcile, args.migrate), indent=2))

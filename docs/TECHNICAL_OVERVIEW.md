@@ -5,11 +5,11 @@
 | Document control | Value |
 | --- | --- |
 | Product | Samanvaya 2 — Enterprise Data Operating System and Operational Ontology Platform |
-| Version covered | 0.3.1 |
+| Version covered | 0.3.2 |
 | Review date | 17 November 2026 |
 | Maturity | Executable Gate 1 reference foundation |
 | Ownership | Veerendra Kiran Bidarkota — Proprietary Commercial Software |
-| Validation baseline | 197 local tests; successful Iceberg absence/retention/return demo |
+| Validation baseline | 245 local tests; successful combined Iceberg reconciliation and migration demo |
 
 ## 1. Purpose and current scope
 
@@ -114,3 +114,7 @@ These checks establish reference behaviour. They do not establish distributed th
 Bindings now supply immutable mappings, deterministic identity, pinned inputs and atomic materialization. Source refresh preserves Action-owned fields. Source disappearance is rejected by default; administrators can explicitly retain reviewed missing objects. Merges involving bindings remain rejected. See [reconciliation](architecture/source-reconciliation.md).
 
 Acceptance should demonstrate mapping validation, branch isolation, current-policy enforcement, replay-safe builds, source/delete handling and a failure that leaves the previous consistent publication intact. See the [roadmap](ROADMAP.md) for the wider delivery sequence.
+
+## 12. Compatible binding migration
+
+Administrators can preview and apply compatible mapping/schema changes with an effect hash and idempotency key. The binding and all objects publish in one commit; existing ownership, identity, operational values and policy remain protected. See [migration contracts](architecture/binding-migrations.md) for supported additions and explicit exclusions.

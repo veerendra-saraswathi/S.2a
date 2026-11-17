@@ -54,6 +54,8 @@ class Service:
             'bindings.materialize': ('write', self.bindings.materialize),
             'bindings.provenance': ('read', self.bindings.provenance),
             'bindings.preview': ('read', self.bindings.preview),
+            'bindings.migration_preview': ('admin', self.bindings.migration_preview),
+            'bindings.migrate': ('admin', self.bindings.migrate),
         }
         with self.store.transaction() as db:
             db.execute('CREATE TABLE IF NOT EXISTS project_memberships('
@@ -63,6 +65,9 @@ class Service:
                        'tenant TEXT NOT NULL, project TEXT NOT NULL, resource TEXT NOT NULL, label TEXT NOT NULL, '
                        'PRIMARY KEY(tenant,project,resource))')
             db.execute('CREATE TABLE IF NOT EXISTS binding_builds('
+                       'tenant TEXT NOT NULL, branch TEXT NOT NULL, idem TEXT NOT NULL, '
+                       'request_hash TEXT NOT NULL, result TEXT NOT NULL, PRIMARY KEY(tenant,branch,idem))')
+            db.execute('CREATE TABLE IF NOT EXISTS binding_migrations('
                        'tenant TEXT NOT NULL, branch TEXT NOT NULL, idem TEXT NOT NULL, '
                        'request_hash TEXT NOT NULL, result TEXT NOT NULL, PRIMARY KEY(tenant,branch,idem))')
 
@@ -99,7 +104,7 @@ class Service:
                     expected = params.get('expected_head')
                     if expected and expected != branch['head']:
                         # Idempotent transaction/invocation retries validate their own pinned base.
-                        if operation not in {'datasets.begin', 'actions.submit', 'bindings.materialize'}:
+                        if operation not in {'datasets.begin', 'actions.submit', 'bindings.materialize', 'bindings.migrate'}:
                             raise Conflict('Stale branch head')
                 result = handler(db, ctx, **params)
                 self.security.audit(db, ctx, operation, params.get('branch', ctx.tenant),

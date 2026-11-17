@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "samanvaya-s2"
-version = "0.3.1"
+version = "0.3.2"
 description = "Proprietary Samanvaya 2 Gate 1 reference foundation"
 requires-python = ">=3.11"
 license = {text = "LicenseRef-Samanvaya-Proprietary"}

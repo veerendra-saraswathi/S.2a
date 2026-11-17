@@ -18,6 +18,8 @@ class Bindings:
         self.store, self.security, self.kernel = store, security, kernel
 
     def _inputs(self, db, ctx, manifest, binding):
+        if not isinstance(binding, str) or not binding:
+            raise S2Error('Binding name required')
         key = 'binding/' + binding
         spec = self.kernel.resource(db, ctx, manifest, key)
         self.security.check_marking(ctx, self.security.effective(db, ctx, key, spec['marking']))
@@ -46,7 +48,7 @@ class Bindings:
         manifest = self.store.manifest(db, ctx.tenant, expected_head)
         key = 'binding/' + binding
         if key in manifest:
-            raise Conflict('Binding definitions are immutable; migration is not yet supported')
+            raise Conflict('Binding already exists; use reviewed migration')
         source = self.kernel.resource(db, ctx, manifest, 'dataset/' + dataset)
         target = self.kernel.resource(db, ctx, manifest, 'type/' + object_type)
         self.kernel.check_definition_access(ctx, source['schema'])
@@ -133,6 +135,30 @@ class Bindings:
             return result
         if self.store.branch(db, ctx.tenant, branch)['head'] != expected_head:
             raise Conflict('Stale branch head')
+        candidates = self._candidates(db, ctx, manifest, binding, spec, source, target,
+                                      expected_head, missing_policy, expected_missing, reason)
+        if any('source_state' in obj for obj in candidates.values()):
+            self._format(db, 4)
+        versions = {}
+        for oid, obj in candidates.items():
+            versions[oid] = self.store.put_revision(db, ctx.tenant, 'object', obj)
+            manifest['object/' + oid] = versions[oid]
+        self.kernel.validate_manifest(db, ctx.tenant, manifest)
+        result = {'commit': self.store.publish(db, ctx, branch, expected_head, manifest),
+                  'status': 'COMMITTED', 'objects': versions,
+                  'dataset_revision': manifest['dataset/' + spec['dataset']],
+                  'binding_revision': manifest['binding/' + binding], 'type_revision': spec['type_revision']}
+        db.execute('INSERT INTO binding_builds VALUES(?,?,?,?,?)',
+                   (ctx.tenant, branch, idempotency_key, request, canonical(result)))
+        return result
+
+    def _format(self, db, version):
+        if db.execute('SELECT version FROM schema_version').fetchone()[0] < version:
+            db.execute('DELETE FROM schema_version')
+            db.execute('INSERT INTO schema_version VALUES(?)', (version,))
+
+    def _candidates(self, db, ctx, manifest, binding, spec, source, target,
+                    expected_head, missing_policy='reject', expected_missing=None, reason=None):
         if len(source['rows']) > 1000:
             raise S2Error('Reference materialization is limited to 1000 rows')
         if (manifest['type/' + spec['object_type']] != spec['type_revision'] or
@@ -155,6 +181,11 @@ class Bindings:
                 raise Conflict('Object identity is already owned by another writer')
             values = ({p: v for p, v in old['values'].items() if p in spec['action_properties']}
                       if old else dict(spec['initial_values']))
+            if old:
+                prior_spec = self.store.revision(db, ctx.tenant, old['source_binding']['binding_revision'])
+                for prop in set(spec['action_properties']) - set(prior_spec['action_properties']):
+                    if prop in spec['initial_values']:
+                        values[prop] = spec['initial_values'][prop]
             for dest, src in spec['mappings'].items():
                 if src in row['values']:
                     values[dest] = row['values'][src]
@@ -201,21 +232,7 @@ class Bindings:
             raise Conflict('Source rows disappeared; deletion reconciliation is required')
         if len(candidates) > 1000:
             raise S2Error('Reference materialization is limited to 1000 resulting objects')
-        if any('source_state' in obj for obj in candidates.values()):
-            db.execute('DELETE FROM schema_version')
-            db.execute('INSERT INTO schema_version VALUES(4)')
-        versions = {}
-        for oid, obj in candidates.items():
-            versions[oid] = self.store.put_revision(db, ctx.tenant, 'object', obj)
-            manifest['object/' + oid] = versions[oid]
-        self.kernel.validate_manifest(db, ctx.tenant, manifest)
-        result = {'commit': self.store.publish(db, ctx, branch, expected_head, manifest),
-                  'status': 'COMMITTED', 'objects': versions,
-                  'dataset_revision': manifest['dataset/' + spec['dataset']],
-                  'binding_revision': manifest['binding/' + binding], 'type_revision': spec['type_revision']}
-        db.execute('INSERT INTO binding_builds VALUES(?,?,?,?,?)',
-                   (ctx.tenant, branch, idempotency_key, request, canonical(result)))
-        return result
+        return candidates
 
     def provenance(self, db, ctx, branch, object_id):
         head = self.store.branch(db, ctx.tenant, branch)['head']
@@ -224,4 +241,117 @@ class Bindings:
         self.security.check_marking(ctx, obj['marking'])
         self.kernel.check_definition_access(ctx, self.kernel.resource(db, ctx, manifest, 'type/' + obj['type']))
         return {'commit': head, 'object_revision': manifest['object/' + object_id],
-                'source_binding': obj.get('source_binding'), 'source_state': obj.get('source_state')}
+                'source_binding': obj.get('source_binding'), 'source_state': obj.get('source_state'),
+                'binding_migration': self.store.revision(db, ctx.tenant,
+                    obj['source_binding']['binding_revision']).get('migration') if 'source_binding' in obj else None}
+
+    def _migration_plan(self, db, ctx, branch, expected_head, binding, mappings,
+                        action_properties, initial_values, reason):
+        self.security.require(ctx, 'admin')
+        if self.store.branch(db, ctx.tenant, branch)['head'] != expected_head:
+            raise Conflict('Stale migration base')
+        if not isinstance(reason, str) or not 1 <= len(reason.strip()) <= 1000:
+            raise S2Error('Migration reason requires 1 to 1000 characters')
+        if (not isinstance(mappings, dict) or not mappings or
+                any(not isinstance(k, str) or not isinstance(v, str) for k, v in mappings.items()) or
+                not isinstance(action_properties, list) or any(not isinstance(p, str) for p in action_properties) or
+                len(set(action_properties)) != len(action_properties) or not isinstance(initial_values, dict)):
+            raise S2Error('Invalid migration mapping, Action properties or defaults')
+        manifest = self.store.manifest(db, ctx.tenant, expected_head)
+        old, source, target = self._inputs(db, ctx, manifest, binding)
+        previous = manifest['binding/' + binding]
+        prior_type = self.store.revision(db, ctx.tenant, old['type_revision'])
+        self.kernel.no_downgrade(prior_type, target)
+        props = target['properties']
+        if (set(mappings) & set(action_properties) or set(mappings) | set(action_properties) != set(props)
+                or set(initial_values) - set(action_properties)):
+            raise S2Error('Every property needs exactly one owner')
+        if (not set(old['mappings']).issubset(mappings) or
+                not set(old['action_properties']).issubset(action_properties)):
+            raise Conflict('Existing property ownership cannot change or be removed')
+        # Defaults for existing Action properties are frozen; their values remain operationally owned.
+        for prop in old['action_properties']:
+            if ((prop in initial_values) != (prop in old['initial_values']) or
+                    initial_values.get(prop) != old['initial_values'].get(prop)):
+                raise Conflict('Existing Action defaults cannot change in this migration slice')
+        if source['primary_key'] != old['primary_key']:
+            raise Conflict('Identity changes require a separate migration workflow')
+        if any(mappings.get(dest) != src for dest, src in old['mappings'].items() if src == old['primary_key']):
+            raise Conflict('Primary-key property mappings cannot change')
+        for dest, src in mappings.items():
+            actual = source['schema']['properties'].get(src)
+            if actual is None or actual['type'] != props[dest]['type']:
+                raise S2Error('Mapped fields must exist with identical scalar types')
+        self.kernel.validate_values({'properties': {p: props[p] for p in action_properties}}, initial_values)
+        label = joined(old['marking'], source['schema'].get('marking'), target.get('marking'),
+                       *(p.get('marking') for p in source['schema']['properties'].values()),
+                       *(p.get('marking') for p in props.values()),
+                       self.security.effective(db, ctx, 'binding/' + binding, None))
+        self.security.check_marking(ctx, label)
+        proposed = {**old, 'mappings': mappings, 'action_properties': sorted(action_properties),
+                    'initial_values': initial_values, 'marking': label,
+                    'type_revision': manifest['type/' + old['object_type']],
+                    'source_schema_hash': digest(self.store.revision(db, ctx.tenant,
+                        manifest['dataset/' + old['dataset']])['schema']),
+                    'migration': {'previous_binding_revision': previous, 'base_commit': expected_head,
+                                  'actor': ctx.principal, 'reason': reason.strip()}}
+        # A dry-run computes canonical revisions without writing revisions or a commit.
+        revision = digest({'kind': 'source_binding', 'payload': proposed})
+        manifest['binding/' + binding] = revision
+        candidates = self._candidates(db, ctx, manifest, binding, proposed, source, target, expected_head)
+        effects = {oid: {'previous_revision': manifest.get('object/' + oid),
+                         'proposed_revision': digest({'kind': 'object', 'payload': obj})}
+                   for oid, obj in sorted(candidates.items())}
+        plan_hash = digest({'base': expected_head, 'binding_revision': revision,
+                            'dataset_revision': manifest['dataset/' + old['dataset']], 'effects': effects})
+        summary = {'commit': expected_head, 'binding': binding, 'previous_binding_revision': previous,
+                   'proposed_binding_revision': revision, 'dataset_revision': manifest['dataset/' + old['dataset']],
+                   'type_revision': proposed['type_revision'], 'plan_hash': plan_hash, 'objects': effects,
+                   'mappings': mappings, 'action_properties': sorted(action_properties),
+                   'initial_values': initial_values, 'reason': reason.strip()}
+        return manifest, proposed, candidates, summary
+
+    def migration_preview(self, db, ctx, branch, expected_head, binding, mappings,
+                          action_properties, initial_values, reason):
+        return self._migration_plan(db, ctx, branch, expected_head, binding, mappings,
+                                    action_properties, initial_values, reason)[3]
+
+    def migrate(self, db, ctx, branch, expected_head, binding, mappings, action_properties,
+                initial_values, reason, plan_hash, idempotency_key):
+        self.security.require(ctx, 'admin')
+        if not isinstance(idempotency_key, str) or not 1 <= len(idempotency_key) <= 200:
+            raise S2Error('Bounded idempotency key required')
+        request = digest({'actor': ctx.principal, 'base': expected_head, 'binding': binding,
+                          'mappings': mappings, 'action_properties': action_properties,
+                          'initial_values': initial_values, 'reason': reason, 'plan_hash': plan_hash})
+        replay = db.execute('SELECT * FROM binding_migrations WHERE tenant=? AND branch=? AND idem=?',
+                            (ctx.tenant, branch, idempotency_key)).fetchone()
+        if replay:
+            if replay['request_hash'] != request:
+                raise Conflict('Idempotency key reused for a different migration')
+            manifest = self.store.manifest(db, ctx.tenant, expected_head)
+            self._inputs(db, ctx, manifest, binding)
+            self._owned(db, ctx, manifest, binding)
+            result = json.loads(replay['result'])
+            published = self.store.manifest(db, ctx.tenant, result['commit'])
+            self._inputs(db, ctx, published, binding)
+            self._owned(db, ctx, published, binding)
+            return result
+        manifest, spec, candidates, summary = self._migration_plan(
+            db, ctx, branch, expected_head, binding, mappings, action_properties, initial_values, reason)
+        if plan_hash != summary['plan_hash']:
+            raise Conflict('Migration effects changed; obtain and review a new preview')
+        self.store.put_revision(db, ctx.tenant, 'source_binding', spec)
+        versions = {}
+        for oid, obj in candidates.items():
+            versions[oid] = self.store.put_revision(db, ctx.tenant, 'object', obj)
+            manifest['object/' + oid] = versions[oid]
+        self.kernel.validate_manifest(db, ctx.tenant, manifest)
+        self._format(db, 5)
+        result = {'commit': self.store.publish(db, ctx, branch, expected_head, manifest),
+                  'status': 'COMMITTED', 'binding_revision': manifest['binding/' + binding],
+                  'previous_binding_revision': summary['previous_binding_revision'],
+                  'plan_hash': plan_hash, 'objects': versions}
+        db.execute('INSERT INTO binding_migrations VALUES(?,?,?,?,?)',
+                   (ctx.tenant, branch, idempotency_key, request, canonical(result)))
+        return result
