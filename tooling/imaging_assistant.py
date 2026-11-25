@@ -44,6 +44,22 @@ def evidence_packet(rows):
     return packet, expected
 
 
+def reviewer_answer(packet, case):
+    original = packet['selected_clip_original_run']
+    replays = packet['selected_clip_replays']
+    runs = [original, replays['repeat_1'], replays['repeat_2']]
+    observations = ', '.join(
+        f"{label} {run['misses']}/{run['frames']}"
+        for label, run in zip(('original', 'replay 1', 'replay 2'), runs)
+    )
+    conclusion = ('The cause is undetermined from these counts.' if case == 'cause'
+                  else 'The original observation is preserved.')
+    return {
+        'summary': f"{conclusion} {original['collection']} deadline misses/frames: {observations}.",
+        'reports': list(dict.fromkeys(run['report'] for run in runs)),
+    }
+
+
 def request(path, payload=None):
     conn = http.client.HTTPConnection('127.0.0.1', 11434, timeout=180)
     try:
@@ -96,6 +112,7 @@ def evaluate(folder, model, case='replay'):
     return {'question': question, 'model': model, 'model_digest': installed[model],
             'elapsed_seconds': round(time.monotonic() - start, 2),
             'passed': response.get('done') is True and json.dumps(answer, sort_keys=True) == json.dumps(expected, sort_keys=True),
+            'reviewer_answer': reviewer_answer(packet, case),
             'verified_measurements': packet, 'model_interpretation': answer,
             'expected_interpretation': expected}
 

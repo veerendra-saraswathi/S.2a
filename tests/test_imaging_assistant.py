@@ -76,3 +76,13 @@ class ImagingAssistantTests(unittest.TestCase):
                         assistant, 'request', side_effect=replies):
                     result = assistant.evaluate(folder, 'local', 'cause')
                     self.assertEqual(result['passed'], cause == 'undetermined')
+                    self.assertEqual(result['model_interpretation'], {'cause': cause})
+                    self.assertEqual(result['reviewer_answer']['reports'], ['original.json', 'times.csv'])
+                    self.assertIn('cause is undetermined', result['reviewer_answer']['summary'])
+
+    def test_reviewer_answer_uses_each_selected_run(self):
+        self.rows[2].update(misses=3, frames=120, report='second.csv')
+        packet, _ = assistant.evidence_packet(self.rows)
+        answer = assistant.reviewer_answer(packet, 'replay')
+        self.assertIn('original 17/150, replay 1 0/150, replay 2 3/120', answer['summary'])
+        self.assertEqual(answer['reports'], ['original.json', 'times.csv', 'second.csv'])
