@@ -101,3 +101,17 @@ class ImagingAssistantTests(unittest.TestCase):
                 query.assert_called_once_with(Path(tmp), {})
                 packet, _ = assistant.evidence_packet(self.rows)
                 self.assertEqual(json.loads(output.getvalue()), assistant.reviewer_answer(packet, case))
+
+    def test_miss_list_excludes_replays_and_cites_each_original(self):
+        self.rows[1]['misses'] = 99
+        result = assistant.missed_collections(self.rows)
+        self.assertEqual((result['original_collections'], result['total_misses'], result['total_frames']),
+                         (6, 32, 900))
+        self.assertEqual([(r['misses'], r['report']) for r in result['collections_with_misses']],
+                         [(17, 'original.json'), (10, 'vbrSzr.json'), (4, '6tLtjd.json'), (1, 'SCiKdG.json')])
+
+    def test_no_misses_or_replays(self):
+        originals = [dict(row, misses=0) for row in self.rows if row['series'] == 'baseline']
+        self.assertEqual(assistant.missed_collections(originals)['collections_with_misses'], [])
+        with self.assertRaises(ValueError):
+            assistant.missed_collections(originals[:-1])

@@ -14,18 +14,36 @@ from imaging_evidence_demo import CLIPS, query_project, S2Error
 QUESTION = 'Did the two ePoikf replays erase its original deadline misses?'
 
 
-def evidence_packet(rows):
+def original_runs(rows):
     baselines = [row for row in rows if row['series'] == 'baseline']
+    if sorted(r['collection'] for r in baselines) != sorted('flirv_' + clip for clip in CLIPS):
+        raise ValueError('this evaluation requires one visible original run per benchmark clip')
+
+    return baselines
+
+
+def measurement(row):
+    return {key: row[key] for key in ('collection', 'misses', 'frames', 'report')}
+
+
+def missed_collections(rows):
+    originals = original_runs(rows)
+    missed = sorted((row for row in originals if row['misses'] > 0),
+                    key=lambda row: (-row['misses'], row['collection']))
+    return {
+        'original_collections': len(originals),
+        'total_misses': sum(row['misses'] for row in originals),
+        'total_frames': sum(row['frames'] for row in originals),
+        'collections_with_misses': [measurement(row) for row in missed],
+    }
+
+
+def evidence_packet(rows):
+    baselines = original_runs(rows)
     focus = [row for row in rows if row['collection'] == 'flirv_ePoikf']
     series = {row['series']: row for row in focus}
     if len(focus) != 3 or set(series) != {'baseline', 'repeat_1', 'repeat_2'}:
         raise ValueError('the viewer needs one ePoikf baseline and both replay records')
-    if sorted(r['collection'] for r in baselines) != sorted('flirv_' + clip for clip in CLIPS):
-        raise ValueError('this evaluation requires one visible original run per benchmark clip')
-
-    def measurement(row):
-        return {key: row[key] for key in ('collection', 'misses', 'frames', 'report')}
-
     original = series['baseline']
     replays = {key: measurement(series[key]) for key in ('repeat_1', 'repeat_2')}
     packet = {
@@ -74,9 +92,13 @@ def request(path, payload=None):
         conn.close()
 
 
-def read_evidence(folder):
+def read_rows(folder):
     state = json.loads((folder / 'session.json').read_text())
-    return evidence_packet(query_project(folder, state))
+    return query_project(folder, state)
+
+
+def read_evidence(folder):
+    return evidence_packet(read_rows(folder))
 
 
 def evaluate(folder, model, case='replay'):
@@ -127,14 +149,21 @@ def main(argv=None):
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--review-only', action='store_true', help='print the cited viewer answer without running Ollama')
     mode.add_argument('--model', default='mistral:latest')
-    parser.add_argument('--case', choices=('replay', 'cause'), default='replay')
+    mode.add_argument('--list-misses', action='store_true', help='list original runs with deadline misses')
+    parser.add_argument('--case', choices=('replay', 'cause'))
     args = parser.parse_args(argv)
+    if args.list_misses and args.case:
+        parser.error('--case applies only to a replay or cause question')
+    case = args.case or 'replay'
     try:
+        if args.list_misses:
+            print(json.dumps(missed_collections(read_rows(args.state)), indent=2))
+            return 0
         if args.review_only:
             packet, _ = read_evidence(args.state)
-            print(json.dumps(reviewer_answer(packet, args.case), indent=2))
+            print(json.dumps(reviewer_answer(packet, case), indent=2))
             return 0
-        result = evaluate(args.state, args.model, args.case)
+        result = evaluate(args.state, args.model, case)
     except (OSError, ValueError, KeyError, S2Error, http.client.HTTPException) as exc:
         parser.exit(1, f'imaging assistant: {exc}\n')
     print(json.dumps(result, indent=2))
