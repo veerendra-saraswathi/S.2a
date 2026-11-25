@@ -152,3 +152,18 @@ class ImagingAssistantTests(unittest.TestCase):
         self.assertEqual([(r['misses'], r['frames']) for r in original], [(17, 150)])
         with self.assertRaisesRegex(ValueError, 'no visible runs'):
             assistant.report_history(rows, 'unseen.csv')
+
+    def test_verify_report_checks_exact_file_bytes(self):
+        rows = [dict(report='report.csv', report_sha256=
+                     'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad')]
+        with tempfile.TemporaryDirectory() as tmp:
+            file = Path(tmp) / 'copy'
+            file.write_bytes(b'abc')
+            self.assertTrue(assistant.verify_report(rows * 2, 'report.csv', file)['matches'])
+            file.write_bytes(b'abc\n')
+            self.assertFalse(assistant.verify_report(rows, 'report.csv', file)['matches'])
+            with self.assertRaises(ValueError):
+                assistant.verify_report(rows, 'unknown.csv', file)
+            with self.assertRaises(ValueError):
+                assistant.verify_report(rows + [dict(report='report.csv', report_sha256='0' * 64)],
+                                        'report.csv', file)

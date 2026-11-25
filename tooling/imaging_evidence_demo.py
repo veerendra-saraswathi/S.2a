@@ -154,7 +154,8 @@ def query_project(folder, state):
             rows.append({'collection': related[oid, 'UsesCollection']['name'],
                          'series': values['series'], 'frames': values['frames'],
                          'misses': values['misses'], 'build': related[oid, 'UsesBuild']['key'],
-                         'report': related[oid, 'CitesReport']['path']})
+                         'report': related[oid, 'CitesReport']['path'],
+                         'report_sha256': related[oid, 'CitesReport']['sha256']})
     return sorted(rows, key=lambda r: (r['collection'], r['series']))
 
 

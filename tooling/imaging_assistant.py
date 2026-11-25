@@ -3,6 +3,7 @@
 # Proprietary Commercial Software. See LICENSE.
 """Evaluate one local model on an imaging replay question using viewer evidence."""
 import argparse
+import hashlib
 import http.client
 import json
 from pathlib import Path
@@ -55,6 +56,21 @@ def report_history(rows, path):
         raise ValueError(f'no visible runs cite report {path!r}')
     fields = ('collection', 'series', 'misses', 'frames', 'build')
     return {'report': path, 'runs': [{key: row[key] for key in fields} for row in selected]}
+
+
+def verify_report(rows, report, local_file):
+    digests = {row['report_sha256'] for row in rows if row['report'] == report}
+    if not digests:
+        raise ValueError(f'no visible runs cite report {report!r}')
+    if len(digests) != 1:
+        raise ValueError(f'multiple recorded digests for report {report!r}')
+    expected = digests.pop()
+    digest = hashlib.sha256()
+    with local_file.open('rb') as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+            digest.update(chunk)
+    actual = digest.hexdigest()
+    return {'recorded_sha256': expected, 'file_sha256': actual, 'matches': actual == expected}
 
 
 def build_history(rows, prefix):
@@ -192,14 +208,21 @@ def main(argv=None):
     mode.add_argument('--build', metavar='ID', help='show visible runs for a build key or unique prefix')
     mode.add_argument('--report', metavar='PATH', help='show visible runs citing the exact recorded report path')
     parser.add_argument('--case', choices=('replay', 'cause'))
+    parser.add_argument('--verify-file', type=Path, help='compare local file bytes with the selected report digest')
     args = parser.parse_args(argv)
+    if args.verify_file is not None and args.report is None:
+        parser.error('--verify-file requires --report')
     if (args.list_misses or args.collection is not None or args.build is not None or args.report is not None) and args.case:
         parser.error('--case applies only to a replay or cause question')
     case = args.case or 'replay'
     try:
         if args.report is not None:
-            print(json.dumps(report_history(read_rows(args.state), args.report), indent=2))
-            return 0
+            rows = read_rows(args.state)
+            result = report_history(rows, args.report)
+            if args.verify_file is not None:
+                result['verification'] = verify_report(rows, args.report, args.verify_file)
+            print(json.dumps(result, indent=2))
+            return 2 if args.verify_file is not None and not result['verification']['matches'] else 0
         if args.build is not None:
             print(json.dumps(build_history(read_rows(args.state), args.build), indent=2))
             return 0

@@ -248,3 +248,5 @@ Use `python3 tooling/imaging_assistant.py "$state" --collection flirv_ePoikf` to
 Follow the build key from any collection with `python3 tooling/imaging_assistant.py "$state" --build 2312a7a63c2e`. A full key or a unique prefix selects the build among visible runs. The result lists each run with its source report and totals grouped by series.
 
 To trace a citation back to the runs that use it, copy its exact recorded path into `--report`. For example, `python3 tooling/imaging_assistant.py "$state" --report benchmarks/flir-epoikf-repeat/frame-times.csv` returns the two ePoikf replays with their series, counts and build keys. The lookup uses the saved viewer snapshot and does not open the source file.
+
+Add `--verify-file /path/to/local/copy` to a `--report` lookup to compare the local bytes with the SHA-256 recorded at import. The JSON includes both digests and a `matches` flag. Exit codes are 0 for a match, 2 for different bytes and 1 for an unavailable file or report.
