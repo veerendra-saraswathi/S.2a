@@ -43,3 +43,19 @@ class ImagingEvidenceTests(unittest.TestCase):
         self.csv.write_text(self.csv.read_text().replace('000.raw', 'wrong.raw'))
         with self.assertRaisesRegex(ValueError, 'baseline evidence'):
             load_evidence(self.root)
+
+    def test_reimport_and_query_from_another_process(self):
+        import subprocess
+        cli = Path(__file__).resolve().parents[1] / 'tooling' / 'imaging_evidence_demo.py'
+        state = self.root / 'saved'
+        command = [sys.executable, str(cli), str(self.root), '--store', str(state)]
+        first = subprocess.check_output(command)
+        identity = (state / 'session.json').read_bytes()
+        self.assertEqual(subprocess.check_output(command), first)
+        self.assertEqual((state / 'session.json').read_bytes(), identity)
+        self.csv.write_text(self.csv.read_text().replace(',10,5', ',11,5'))
+        self.assertNotEqual(subprocess.run(command, capture_output=True).returncode, 0)
+        (self.root / 'benchmarks').rename(self.root / 'unavailable')
+        result = subprocess.check_output([sys.executable, str(cli), '--query', str(state)])
+        self.assertEqual(result, first)
+        self.assertEqual(result.count(b' | build '), 8)

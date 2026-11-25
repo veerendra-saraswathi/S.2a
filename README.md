@@ -206,3 +206,15 @@ python3 tooling/imaging_evidence_demo.py ../S0.7
 ```
 
 The demo reads six baseline reports and the ePoikf replay CSV, writes four datasets through the S2 transaction API, materializes typed objects, and queries their links. Each CodecRun links to its Collection, CodecBuild and EvidenceReport. Source report hashes identify the imported evidence. The six baselines yield 32 misses across 900 frames; the two replays have their own records and are excluded from the baseline total. The JSON-backed database is temporary and removed on exit. S0.7 owns this benchmark format; the generic storage and ontology services are unchanged.
+
+To retain this evidence between sessions, select a new private state directory outside the checkout:
+
+```sh
+state="$HOME/.local/share/samanvaya/imaging-evidence-v1"
+python3 tooling/imaging_evidence_demo.py ../S0.7 --store "$state"
+python3 tooling/imaging_evidence_demo.py --query "$state"
+```
+
+An identical import reuses the snapshot. Changed reports require a new directory.
+The query opens the saved ontology with a project viewer credential and requires no S0.7 checkout.
+Keep the state directory private: it contains the local database and viewer credential.
