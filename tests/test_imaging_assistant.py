@@ -64,3 +64,15 @@ class ImagingAssistantTests(unittest.TestCase):
                     payload = api.call_args.args[1]
                     self.assertNotIn('SECRET', json.dumps(payload))
                     self.assertNotIn('tools', payload)
+
+    def test_cause_requires_abstention(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            (folder / 'session.json').write_text('{}')
+            for cause in ('undetermined', 'cpu_scheduling', 'thermal_conditions', 'frame_content'):
+                replies = [{'models': [{'name': 'local', 'digest': 'test-build'}]},
+                           {'done': True, 'message': {'content': json.dumps({'cause': cause})}}]
+                with self.subTest(cause=cause), patch.object(assistant, 'query_project', return_value=self.rows), patch.object(
+                        assistant, 'request', side_effect=replies):
+                    result = assistant.evaluate(folder, 'local', 'cause')
+                    self.assertEqual(result['passed'], cause == 'undetermined')

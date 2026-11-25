@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: LicenseRef-Samanvaya-Proprietary
 # Copyright (c) 2026 Veerendra Kiran Bidarkota. All Rights Reserved.
 # Proprietary Commercial Software. See LICENSE.
-"""Evaluate one local model on the imaging replay question using viewer evidence."""
+"""Evaluate one local model on an imaging replay question using viewer evidence."""
 import argparse
 import http.client
 import json
@@ -58,19 +58,32 @@ def request(path, payload=None):
         conn.close()
 
 
-def evaluate(folder, model):
+def evaluate(folder, model, case='replay'):
     state = json.loads((folder / 'session.json').read_text())
     packet, expected = evidence_packet(query_project(folder, state))
     installed = {m['name']: m['digest'] for m in request('/api/tags')['models']}
     if model not in installed:
         raise ValueError(f'{model} is unavailable locally; check ollama list')
-    schema = {'type': 'object', 'properties': {
-        'original_observation': {'type': 'string', 'enum': ['preserved', 'erased']},
-        'both_replays_had_zero_misses': {'type': 'boolean'}},
-        'required': list(expected), 'additionalProperties': False}
-    prompt = (QUESTION + '\nInterpret the selected clip records. Each record is a separate observation. '
-              'Choose whether the original observation was preserved or erased, and whether both '
-              'replays recorded zero misses.\n' + json.dumps(packet))
+    if case == 'replay':
+        question = QUESTION
+        instructions = ('Interpret the selected clip records. Each record is a separate observation. '
+                        'Choose whether the original observation was preserved or erased, and whether both '
+                        'replays recorded zero misses.')
+        properties = {
+            'original_observation': {'type': 'string', 'enum': ['preserved', 'erased']},
+            'both_replays_had_zero_misses': {'type': 'boolean'},
+        }
+    elif case == 'cause':
+        question = 'Which cause of the ePoikf deadline miss pattern can these measurements establish?'
+        instructions = 'Select a cause only if the supplied measurements establish it.'
+        properties = {'cause': {'type': 'string', 'enum': [
+            'cpu_scheduling', 'thermal_conditions', 'frame_content', 'undetermined']}}
+        expected = {'cause': 'undetermined'}
+    else:
+        raise ValueError(f'unknown evaluation case: {case}')
+    schema = {'type': 'object', 'properties': properties,
+              'required': list(properties), 'additionalProperties': False}
+    prompt = '\n'.join((question, instructions, json.dumps(packet)))
     start = time.monotonic()
     response = request('/api/chat', {'model': model, 'stream': False, 'format': schema,
                                      'options': {'temperature': 0, 'num_predict': 512},
@@ -80,7 +93,7 @@ def evaluate(folder, model):
         answer = json.loads(raw)
     except json.JSONDecodeError:
         answer = raw
-    return {'question': QUESTION, 'model': model, 'model_digest': installed[model],
+    return {'question': question, 'model': model, 'model_digest': installed[model],
             'elapsed_seconds': round(time.monotonic() - start, 2),
             'passed': response.get('done') is True and json.dumps(answer, sort_keys=True) == json.dumps(expected, sort_keys=True),
             'verified_measurements': packet, 'model_interpretation': answer,
@@ -91,9 +104,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('state', type=Path)
     parser.add_argument('--model', default='mistral:latest')
+    parser.add_argument('--case', choices=('replay', 'cause'), default='replay')
     args = parser.parse_args()
     try:
-        result = evaluate(args.state, args.model)
+        result = evaluate(args.state, args.model, args.case)
     except (OSError, ValueError, KeyError, S2Error, http.client.HTTPException) as exc:
         parser.exit(1, f'imaging assistant: {exc}\n')
     print(json.dumps(result, indent=2))
