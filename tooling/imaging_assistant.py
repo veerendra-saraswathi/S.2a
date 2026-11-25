@@ -38,6 +38,16 @@ def missed_collections(rows):
     }
 
 
+def collection_history(rows, collection):
+    selected = [row for row in rows if row['collection'] == collection]
+    if not selected:
+        raise ValueError(f'no visible runs for collection {collection!r}')
+    fields = ('series', 'misses', 'frames', 'build', 'report')
+    return {'collection': collection,
+            'runs': [{key: row[key] for key in fields}
+                     for row in sorted(selected, key=lambda row: row['series'])]}
+
+
 def evidence_packet(rows):
     baselines = original_runs(rows)
     focus = [row for row in rows if row['collection'] == 'flirv_ePoikf']
@@ -150,12 +160,16 @@ def main(argv=None):
     mode.add_argument('--review-only', action='store_true', help='print the cited viewer answer without running Ollama')
     mode.add_argument('--model', default='mistral:latest')
     mode.add_argument('--list-misses', action='store_true', help='list original runs with deadline misses')
+    mode.add_argument('--collection', metavar='ID', help='show visible runs and evidence for one collection')
     parser.add_argument('--case', choices=('replay', 'cause'))
     args = parser.parse_args(argv)
-    if args.list_misses and args.case:
+    if (args.list_misses or args.collection is not None) and args.case:
         parser.error('--case applies only to a replay or cause question')
     case = args.case or 'replay'
     try:
+        if args.collection is not None:
+            print(json.dumps(collection_history(read_rows(args.state), args.collection), indent=2))
+            return 0
         if args.list_misses:
             print(json.dumps(missed_collections(read_rows(args.state)), indent=2))
             return 0

@@ -115,3 +115,16 @@ class ImagingAssistantTests(unittest.TestCase):
         self.assertEqual(assistant.missed_collections(originals)['collections_with_misses'], [])
         with self.assertRaises(ValueError):
             assistant.missed_collections(originals[:-1])
+
+    def test_collection_lookup_preserves_each_run_and_its_build(self):
+        rows = [dict(row, build='build-' + row['series']) for row in reversed(self.rows)]
+        result = assistant.collection_history(rows, 'flirv_ePoikf')
+        self.assertEqual([(r['series'], r['misses'], r['build'], r['report']) for r in result['runs']],
+                         [('baseline', 17, 'build-baseline', 'original.json'),
+                          ('repeat_1', 0, 'build-repeat_1', 'times.csv'),
+                          ('repeat_2', 0, 'build-repeat_2', 'times.csv')])
+        single = assistant.collection_history(rows, 'flirv_4FRnNp')
+        self.assertEqual(len(single['runs']), 1)
+        self.assertEqual(single['runs'][0]['misses'], 0)
+        with self.assertRaisesRegex(ValueError, 'no visible runs'):
+            assistant.collection_history(rows, 'unseen')

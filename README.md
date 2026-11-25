@@ -242,3 +242,5 @@ python3 tooling/imaging_assistant.py "$state" --review-only --case cause
 This command prints the summary and source report paths. Exit code 0 means the evidence query and rendering succeeded. Use `--case replay` for the original observation question.
 
 To list original collections with deadline misses, run `python3 tooling/imaging_assistant.py "$state" --list-misses`. Each row includes a miss count, frame count and report path. Rows are ordered by descending miss count with ties ordered by collection name. Totals cover all six originals, including zero-miss runs. This viewer query runs independently of Ollama and replay records.
+
+Use `python3 tooling/imaging_assistant.py "$state" --collection flirv_ePoikf` to inspect one collection by its exact ID. Each visible run includes its series, miss and frame counts, codec build key and source report. Two replays that share a report appear as separate runs. This query runs locally without Ollama.
