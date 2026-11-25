@@ -218,3 +218,13 @@ python3 tooling/imaging_evidence_demo.py --query "$state"
 An identical import reuses the snapshot. Changed reports require a new directory.
 The query opens the saved ontology with a project viewer credential and requires no S0.7 checkout.
 Keep the state directory private: it contains the local database and viewer credential.
+
+### Evaluate a local model against saved imaging evidence
+
+With the imaging snapshot above and Ollama running locally, try:
+
+```sh
+python3 tooling/imaging_assistant.py "$state" --model mistral:latest
+```
+
+The pilot asks one fixed question about the ePoikf replays. The query uses the project viewer. Only selected evidence fields are sent to the local chat endpoint. The model receives no credentials or callable tools. The CLI compares its structured answer (including both report paths) with the independently computed query result, prints the local model digest and elapsed time, and exits with 0 for a matching answer, 2 for an evaluation mismatch or 1 for an execution error. This is a single-case evidence-reading evaluation.
