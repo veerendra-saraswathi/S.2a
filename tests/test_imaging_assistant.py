@@ -128,3 +128,15 @@ class ImagingAssistantTests(unittest.TestCase):
         self.assertEqual(single['runs'][0]['misses'], 0)
         with self.assertRaisesRegex(ValueError, 'no visible runs'):
             assistant.collection_history(rows, 'unseen')
+
+    def test_build_history_filters_and_keeps_series_separate(self):
+        rows = [dict(row, build='abc1') for row in self.rows]
+        rows.append(dict(rows[0], build='abc2', misses=99))
+        result = assistant.build_history(rows, 'abc1')
+        self.assertEqual(result['totals_by_series']['baseline'], dict(runs=6, misses=32, frames=900))
+        self.assertEqual(result['totals_by_series']['repeat_2'], dict(runs=1, misses=0, frames=150))
+        self.assertEqual(len(result['runs']), 8)
+        self.assertEqual(assistant.build_history(rows[:-1], 'abc'), result)
+        for key in ('abc', 'missing', ''):
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                assistant.build_history(rows, key)

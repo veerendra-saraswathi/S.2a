@@ -48,6 +48,25 @@ def collection_history(rows, collection):
                      for row in sorted(selected, key=lambda row: row['series'])]}
 
 
+def build_history(rows, prefix):
+    builds = {row['build'] for row in rows if prefix and row['build'].startswith(prefix)}
+    if not builds:
+        raise ValueError(f'no visible runs for build {prefix!r}')
+    if len(builds) > 1:
+        raise ValueError('ambiguous build prefix, supply more characters')
+    build = builds.pop()
+    selected = sorted((row for row in rows if row['build'] == build),
+                      key=lambda row: (row['collection'], row['series']))
+    totals = {}
+    for row in selected:
+        counts = totals.setdefault(row['series'], {'runs': 0, 'misses': 0, 'frames': 0})
+        counts['runs'] += 1
+        counts['misses'] += row['misses']
+        counts['frames'] += row['frames']
+    return {'build': build, 'totals_by_series': totals,
+            'runs': [dict(measurement(row), series=row['series']) for row in selected]}
+
+
 def evidence_packet(rows):
     baselines = original_runs(rows)
     focus = [row for row in rows if row['collection'] == 'flirv_ePoikf']
@@ -161,12 +180,16 @@ def main(argv=None):
     mode.add_argument('--model', default='mistral:latest')
     mode.add_argument('--list-misses', action='store_true', help='list original runs with deadline misses')
     mode.add_argument('--collection', metavar='ID', help='show visible runs and evidence for one collection')
+    mode.add_argument('--build', metavar='ID', help='show visible runs for a build key or unique prefix')
     parser.add_argument('--case', choices=('replay', 'cause'))
     args = parser.parse_args(argv)
-    if (args.list_misses or args.collection is not None) and args.case:
+    if (args.list_misses or args.collection is not None or args.build is not None) and args.case:
         parser.error('--case applies only to a replay or cause question')
     case = args.case or 'replay'
     try:
+        if args.build is not None:
+            print(json.dumps(build_history(read_rows(args.state), args.build), indent=2))
+            return 0
         if args.collection is not None:
             print(json.dumps(collection_history(read_rows(args.state), args.collection), indent=2))
             return 0

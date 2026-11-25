@@ -244,3 +244,5 @@ This command prints the summary and source report paths. Exit code 0 means the e
 To list original collections with deadline misses, run `python3 tooling/imaging_assistant.py "$state" --list-misses`. Each row includes a miss count, frame count and report path. Rows are ordered by descending miss count with ties ordered by collection name. Totals cover all six originals, including zero-miss runs. This viewer query runs independently of Ollama and replay records.
 
 Use `python3 tooling/imaging_assistant.py "$state" --collection flirv_ePoikf` to inspect one collection by its exact ID. Each visible run includes its series, miss and frame counts, codec build key and source report. Two replays that share a report appear as separate runs. This query runs locally without Ollama.
+
+Follow the build key from any collection with `python3 tooling/imaging_assistant.py "$state" --build 2312a7a63c2e`. A full key or a unique prefix selects the build among visible runs. The result lists each run with its source report and totals grouped by series.
