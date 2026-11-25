@@ -140,3 +140,15 @@ class ImagingAssistantTests(unittest.TestCase):
         for key in ('abc', 'missing', ''):
             with self.subTest(key=key), self.assertRaises(ValueError):
                 assistant.build_history(rows, key)
+
+    def test_report_lookup_keeps_shared_citations_and_matches_exact_path(self):
+        rows = [dict(row, build='codec-build') for row in reversed(self.rows)]
+        rows.append(dict(rows[0], report='another/times.csv'))
+        result = assistant.report_history(rows, 'times.csv')
+        self.assertEqual([(r['collection'], r['series'], r['build']) for r in result['runs']],
+                         [('flirv_ePoikf', 'repeat_1', 'codec-build'),
+                          ('flirv_ePoikf', 'repeat_2', 'codec-build')])
+        original = assistant.report_history(rows, 'original.json')['runs']
+        self.assertEqual([(r['misses'], r['frames']) for r in original], [(17, 150)])
+        with self.assertRaisesRegex(ValueError, 'no visible runs'):
+            assistant.report_history(rows, 'unseen.csv')

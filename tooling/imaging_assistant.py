@@ -48,6 +48,15 @@ def collection_history(rows, collection):
                      for row in sorted(selected, key=lambda row: row['series'])]}
 
 
+def report_history(rows, path):
+    selected = sorted((row for row in rows if row['report'] == path),
+                      key=lambda row: (row['collection'], row['series']))
+    if not selected:
+        raise ValueError(f'no visible runs cite report {path!r}')
+    fields = ('collection', 'series', 'misses', 'frames', 'build')
+    return {'report': path, 'runs': [{key: row[key] for key in fields} for row in selected]}
+
+
 def build_history(rows, prefix):
     builds = {row['build'] for row in rows if prefix and row['build'].startswith(prefix)}
     if not builds:
@@ -181,12 +190,16 @@ def main(argv=None):
     mode.add_argument('--list-misses', action='store_true', help='list original runs with deadline misses')
     mode.add_argument('--collection', metavar='ID', help='show visible runs and evidence for one collection')
     mode.add_argument('--build', metavar='ID', help='show visible runs for a build key or unique prefix')
+    mode.add_argument('--report', metavar='PATH', help='show visible runs citing the exact recorded report path')
     parser.add_argument('--case', choices=('replay', 'cause'))
     args = parser.parse_args(argv)
-    if (args.list_misses or args.collection is not None or args.build is not None) and args.case:
+    if (args.list_misses or args.collection is not None or args.build is not None or args.report is not None) and args.case:
         parser.error('--case applies only to a replay or cause question')
     case = args.case or 'replay'
     try:
+        if args.report is not None:
+            print(json.dumps(report_history(read_rows(args.state), args.report), indent=2))
+            return 0
         if args.build is not None:
             print(json.dumps(build_history(read_rows(args.state), args.build), indent=2))
             return 0

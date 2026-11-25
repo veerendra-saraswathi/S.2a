@@ -246,3 +246,5 @@ To list original collections with deadline misses, run `python3 tooling/imaging_
 Use `python3 tooling/imaging_assistant.py "$state" --collection flirv_ePoikf` to inspect one collection by its exact ID. Each visible run includes its series, miss and frame counts, codec build key and source report. Two replays that share a report appear as separate runs. This query runs locally without Ollama.
 
 Follow the build key from any collection with `python3 tooling/imaging_assistant.py "$state" --build 2312a7a63c2e`. A full key or a unique prefix selects the build among visible runs. The result lists each run with its source report and totals grouped by series.
+
+To trace a citation back to the runs that use it, copy its exact recorded path into `--report`. For example, `python3 tooling/imaging_assistant.py "$state" --report benchmarks/flir-epoikf-repeat/frame-times.csv` returns the two ePoikf replays with their series, counts and build keys. The lookup uses the saved viewer snapshot and does not open the source file.
