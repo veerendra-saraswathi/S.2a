@@ -196,3 +196,13 @@ See [security guidance](SECURITY.md) and the [implementation status matrix](docs
 **Copyright © 2026 Veerendra Kiran Bidarkota. All Rights Reserved — Proprietary Commercial Software.**
 
 Use and distribution are governed by [LICENSE](LICENSE). Third-party components retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Palantir product names are architectural references; no affiliation, technology license or achieved product equivalence is asserted.
+
+### Imaging evidence through S2 bindings
+
+From this checkout on the ontology-bindings branch, run the local demonstration with a sibling S0.7 checkout at `e4d08a5` or later containing the benchmark reports:
+
+```sh
+python3 tooling/imaging_evidence_demo.py ../S0.7
+```
+
+The demo reads six baseline reports and the ePoikf replay CSV, writes four datasets through the S2 transaction API, materializes typed objects, and queries their links. Each CodecRun links to its Collection, CodecBuild and EvidenceReport. Source report hashes identify the imported evidence. The six baselines yield 32 misses across 900 frames; the two replays have their own records and are excluded from the baseline total. The JSON-backed database is temporary and removed on exit. S0.7 owns this benchmark format; the generic storage and ontology services are unchanged.
