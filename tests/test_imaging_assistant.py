@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: LicenseRef-Samanvaya-Proprietary
 # Copyright (c) 2026 Veerendra Kiran Bidarkota. All Rights Reserved.
 # Proprietary Commercial Software. See LICENSE.
+from contextlib import redirect_stdout
+import io
 import json
 from pathlib import Path
 import sys
@@ -86,3 +88,16 @@ class ImagingAssistantTests(unittest.TestCase):
         answer = assistant.reviewer_answer(packet, 'replay')
         self.assertIn('original 17/150, replay 1 0/150, replay 2 3/120', answer['summary'])
         self.assertEqual(answer['reports'], ['original.json', 'times.csv', 'second.csv'])
+
+    def test_review_only_reads_viewer_evidence_without_model_calls(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / 'session.json').write_text('{}')
+            for case in ('replay', 'cause'):
+                output = io.StringIO()
+                with patch.object(assistant, 'request') as api, patch.object(
+                        assistant, 'query_project', return_value=self.rows) as query, redirect_stdout(output):
+                    self.assertEqual(assistant.main([tmp, '--review-only', '--case', case]), 0)
+                api.assert_not_called()
+                query.assert_called_once_with(Path(tmp), {})
+                packet, _ = assistant.evidence_packet(self.rows)
+                self.assertEqual(json.loads(output.getvalue()), assistant.reviewer_answer(packet, case))

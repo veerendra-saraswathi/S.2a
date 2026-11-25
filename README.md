@@ -232,3 +232,11 @@ The pilot asks whether the two ePoikf replays erased the original misses. The vi
 Use `--case cause` to ask what caused the ePoikf miss pattern. The viewer supplies counts and references. Those observations alone cannot establish CPU scheduling, thermal conditions or frame content as the cause. This case checks whether a model reports that uncertainty. The default case remains `replay`.
 
 Display `reviewer_answer.summary` and `reviewer_answer.reports` together. Both come from the selected viewer records. The diagnostic fields `model_interpretation` and `passed` retain the model response and its evaluation even when the model guesses a cause.
+
+For a cited answer without running a model, use the same saved viewer snapshot:
+
+```sh
+python3 tooling/imaging_assistant.py "$state" --review-only --case cause
+```
+
+This command prints the summary and source report paths. Exit code 0 means the evidence query and rendering succeeded. Use `--case replay` for the original observation question.

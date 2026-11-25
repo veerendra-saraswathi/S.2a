@@ -74,9 +74,13 @@ def request(path, payload=None):
         conn.close()
 
 
-def evaluate(folder, model, case='replay'):
+def read_evidence(folder):
     state = json.loads((folder / 'session.json').read_text())
-    packet, expected = evidence_packet(query_project(folder, state))
+    return evidence_packet(query_project(folder, state))
+
+
+def evaluate(folder, model, case='replay'):
+    packet, expected = read_evidence(folder)
     installed = {m['name']: m['digest'] for m in request('/api/tags')['models']}
     if model not in installed:
         raise ValueError(f'{model} is unavailable locally; check ollama list')
@@ -117,15 +121,25 @@ def evaluate(folder, model, case='replay'):
             'expected_interpretation': expected}
 
 
-if __name__ == '__main__':
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('state', type=Path)
-    parser.add_argument('--model', default='mistral:latest')
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--review-only', action='store_true', help='print the cited viewer answer without running Ollama')
+    mode.add_argument('--model', default='mistral:latest')
     parser.add_argument('--case', choices=('replay', 'cause'), default='replay')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     try:
+        if args.review_only:
+            packet, _ = read_evidence(args.state)
+            print(json.dumps(reviewer_answer(packet, args.case), indent=2))
+            return 0
         result = evaluate(args.state, args.model, args.case)
     except (OSError, ValueError, KeyError, S2Error, http.client.HTTPException) as exc:
         parser.exit(1, f'imaging assistant: {exc}\n')
     print(json.dumps(result, indent=2))
-    sys.exit(0 if result['passed'] else 2)
+    return 0 if result['passed'] else 2
+
+
+if __name__ == '__main__':
+    sys.exit(main())
