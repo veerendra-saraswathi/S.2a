@@ -269,4 +269,11 @@ Run `python tooling/imaging_assistant.py "$state" --verify-reports ../S0.7` to v
 
 For a short terminal review, run `python tooling/imaging_assistant.py "$state" --summary ../S0.7`. Counts come from the saved snapshot. Source verification checks the current files and returns exit code 2 for individual failures. Resolution acceptance is reported separately.
 
-Add `--markdown` to `--summary` to export a review with a citation for each run and a verification table for the distinct source reports. Redirect standard output to a Markdown file. The exit codes are the same as for the terminal summary.
+The [compression benchmark review](docs/reviews/Samanvaya-compression-review.md) includes per-run citations and file verification results. From the repository root, refresh the tracked report after a successful verification:
+
+```sh
+review=docs/reviews/Samanvaya-compression-review.md
+tmp_review=$(mktemp) &&
+python tooling/imaging_assistant.py "$state" --summary ../S0.7 --markdown > "$tmp_review" &&
+mv "$tmp_review" "$review"
+```
