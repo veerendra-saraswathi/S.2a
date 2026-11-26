@@ -279,3 +279,16 @@ mv "$tmp_review" "$review"
 ```
 
 Check the tracked review from an existing snapshot with `tooling/check_compression_review.sh "$state" ../S0.7`. The check verifies the cited files, regenerates the Markdown in a temporary file, and compares its bytes with the tracked copy. A source verification failure or a difference in the review returns a nonzero exit status.
+
+### Record a resolution review decision
+
+Create a separate local review-enabled snapshot. Its private reviewer.token file grants project editor access. Keep it with the designated local reviewer and outside Git. The receipt identifies the authenticated project principal and records UTC time, the evidence commit, requirement wording and report digests.
+
+```sh
+review_state="$HOME/.local/share/samanvaya/imaging-review-v3"
+python tooling/imaging_evidence_demo.py ../S0.7 --store "$review_state" --enable-review
+python tooling/imaging_review_decision.py "$review_state" --credential "$review_state/reviewer.token" --open "Coverage near 1920 × 1200 remains open."
+python tooling/imaging_review_decision.py "$review_state"
+```
+
+Recording the same decision twice returns the original receipt. The viewer can reopen it after restart. A new evidence snapshot has its own review.

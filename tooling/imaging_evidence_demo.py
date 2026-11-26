@@ -115,7 +115,7 @@ def load_evidence(repo):
     return objects, links
 
 
-def create_project(folder, objects, edges):
+def create_project(folder, objects, edges, enable_review=False):
     service = Service(folder / 'demo.db', storage_backend='json')
     token = service.bootstrap('Imaging laboratory', 3, ['ENG'])['token']
     project = service.call(token, 'projects.create', name='Codec evidence')
@@ -149,6 +149,12 @@ def create_project(folder, objects, edges):
 
     reader = service.call(token, 'principals.create', role='viewer', clearance=3, compartments=['ENG'])
     service.call(token, 'projects.grant', project=project['project'], principal=reader['principal_id'])
+    if enable_review:
+        reviewer = service.call(token, 'principals.create', role='editor', clearance=3, compartments=['ENG'])
+        service.call(token, 'projects.grant', project=project['project'], principal=reviewer['principal_id'])
+        credential = folder / 'reviewer.token'
+        credential.touch(mode=0o600)
+        credential.write_text(reviewer['token'])
     return {'branch': branch, 'viewer_token': reader['token'],
             'source_reports': sorted(objects['EvidenceReport'])}
 
@@ -179,14 +185,14 @@ def query_project(folder, state):
     return sorted(rows, key=lambda r: (r['collection'], r['series']))
 
 
-def import_project(repo, folder):
+def import_project(repo, folder, enable_review=False):
     objects, edges = load_evidence(repo)
     # A completed snapshot is immutable. Build privately, then publish as one directory.
     if not folder.exists():
         folder.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=folder.parent, prefix='.s2-import-') as temp:
             stage = Path(temp)
-            state = create_project(stage, objects, edges)
+            state = create_project(stage, objects, edges, enable_review)
             credentials = stage / 'session.json'
             credentials.touch(mode=0o600)
             credentials.write_text(json.dumps(state))
@@ -196,6 +202,8 @@ def import_project(repo, folder):
                 if exc.errno not in (errno.EEXIST, errno.ENOTEMPTY):
                     raise
     state = json.loads((folder / 'session.json').read_text())
+    if enable_review and not (folder / 'reviewer.token').is_file():
+        raise ValueError('choose a new state directory to enable reviewer access')
     if state['source_reports'] != sorted(objects['EvidenceReport']):
         raise ValueError('source reports differ from this saved snapshot; choose a new state directory')
     return query_project(folder, state)
@@ -212,14 +220,17 @@ if __name__ == '__main__':
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--store', type=Path, help='create or reuse this local evidence snapshot')
     mode.add_argument('--query', type=Path, help='open a saved snapshot without the source checkout')
+    parser.add_argument('--enable-review', action='store_true', help='provision a local editor credential in a new snapshot')
     args = parser.parse_args()
+    if args.enable_review and not args.store:
+        parser.error('--enable-review requires --store')
     if (args.s07 is None) != (args.query is not None):
         parser.error('provide either an S0.7 checkout or --query STATE')
     try:
         if args.query is not None:
             rows = query_project(args.query, json.loads((args.query / 'session.json').read_text()))
         elif args.store is not None:
-            rows = import_project(args.s07, args.store)
+            rows = import_project(args.s07, args.store, args.enable_review)
         else:
             rows = run(args.s07)
     except (ValueError, KeyError, OSError, S2Error) as exc:

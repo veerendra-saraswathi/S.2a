@@ -76,3 +76,25 @@ class ImagingEvidenceTests(unittest.TestCase):
         by_name = {r['collection']: r for r in first['collections']}
         self.assertEqual(by_name['flirv_ePoikf']['replays'], ['repeat_1', 'repeat_2'])
         self.assertEqual(by_name['flirv_5RSrbW']['encoder_resolution'], 'unknown')
+
+    def test_review_pins_evidence_and_requires_editor(self):
+        from imaging_evidence_demo import import_project
+        from imaging_review_decision import ReviewService
+        from s2_platform import Conflict, Forbidden
+        folder = self.root / 'review'
+        import_project(self.root, folder, enable_review=True)
+        state = json.loads((folder / 'session.json').read_text())
+        db = folder / 'demo.db'
+        service = ReviewService(db)
+        branch = state['branch']
+        with self.assertRaises(Forbidden):
+            service.call(state['viewer_token'], 'review.open', branch=branch, note='Needs review')
+        token = (folder / 'reviewer.token').read_text()
+        def record(note):
+            return service.call(token, 'review.open', branch=branch, note=note)
+        receipt = record('Needs review')
+        self.assertEqual(record('Needs review'), receipt)
+        with self.assertRaises(Conflict):
+            record('Changed')
+        self.assertEqual(len([ref for ref in receipt['evidence'] if 'sha256' in ref]), 7)
+        self.assertEqual(ReviewService(db).call(state['viewer_token'], 'review.read', branch=branch), receipt)
