@@ -98,3 +98,40 @@ class ImagingEvidenceTests(unittest.TestCase):
             record('Changed')
         self.assertEqual(len([ref for ref in receipt['evidence'] if 'sha256' in ref]), 7)
         self.assertEqual(ReviewService(db).call(state['viewer_token'], 'review.read', branch=branch), receipt)
+
+    def test_new_evidence_preserves_prior_review(self):
+        import hashlib
+        import subprocess
+        from imaging_assistant import resolution_coverage
+        from imaging_evidence_demo import import_project
+
+        cli = Path(__file__).resolve().parents[1] / 'tooling' / 'imaging_review_decision.py'
+        report = self.root / 'benchmarks/flir-4frnnp/run.json'
+        data = json.loads(report.read_text())
+        data['encoder_args'] = ['-W', '640', '-H', '512']
+        report.write_text(json.dumps(data))
+        old_digest = hashlib.sha256(report.read_bytes()).hexdigest()
+        old = self.root / 'original'
+        import_project(self.root, old, enable_review=True)
+        read_old = [sys.executable, str(cli), str(old)]
+        receipt = subprocess.check_output(read_old + ['--credential', str(old / 'reviewer.token'),
+                                                      '--open', 'Additional resolution evidence required.'])
+        saved = json.loads(receipt)
+        self.assertEqual(saved['status'], 'open')
+        references = {ref['path']: ref['sha256'] for ref in saved['evidence'] if 'path' in ref}
+        self.assertEqual(references['benchmarks/flir-4frnnp/run.json'], old_digest)
+
+        data['encoder_args'] = ['-W', '1920', '-H', '1200']
+        data['manifest_sha256'] = 'f' * 64
+        report.write_text(json.dumps(data))
+        with self.assertRaisesRegex(ValueError, 'source reports differ'):
+            import_project(self.root, old)
+        new = self.root / 'subsequent'
+        coverage = resolution_coverage(import_project(self.root, new, enable_review=True))
+        updated = next(row for row in coverage['collections'] if row['collection'] == 'flirv_4FRnNp')
+        self.assertEqual(updated['encoder_resolution'], '1920x1200')
+        self.assertNotEqual(updated['report_sha256'], old_digest)
+        self.assertEqual(coverage['acceptance'], 'unassessed')
+        self.assertEqual(json.loads(subprocess.check_output([sys.executable, str(cli), str(new)]))['status'],
+                         'unrecorded')
+        self.assertEqual(subprocess.check_output(read_old), receipt)
