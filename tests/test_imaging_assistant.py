@@ -198,3 +198,13 @@ class ImagingAssistantTests(unittest.TestCase):
         for value in ('wording unavailable', 'unknown (6)', '32 / 900', 'repeat_1: 0 / 150',
                       '6 / 7', 'Verification failed: times.csv'):
             self.assertIn(value, summary)
+
+    def test_markdown_review_cites_each_run_and_marks_failed_files(self):
+        rows = [dict(row, report_sha256='a'*64) for row in self.rows]
+        audit = {'matched_reports': 6, 'unique_reports': 7,
+                 'reports': [{'report': 'times.csv', 'matches': False}]}
+        report = assistant.markdown_review(rows, audit)
+        self.assertIn('| flirv_ePoikf | repeat_1 | 0 | 150 | `times.csv` |', report)
+        self.assertIn('| flirv_ePoikf | repeat_2 | 0 | 150 | `times.csv` |', report)
+        self.assertIn('| `times.csv` | `unavailable` | Failed |', report)
+        self.assertIn('Resolution acceptance: unassessed', report)

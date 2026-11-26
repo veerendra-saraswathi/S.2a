@@ -268,3 +268,5 @@ The resolution query reads requirement wording from the linked snapshot records.
 Run `python tooling/imaging_assistant.py "$state" --verify-reports ../S0.7` to verify every distinct report cited by visible runs. The command checks shared files once and reports missing or changed files individually. Exit code 0 means all cited files matched, 2 flags individual failures, and 1 indicates the audit could not start.
 
 For a short terminal review, run `python tooling/imaging_assistant.py "$state" --summary ../S0.7`. Counts come from the saved snapshot. Source verification checks the current files and returns exit code 2 for individual failures. Resolution acceptance is reported separately.
+
+Add `--markdown` to `--summary` to export a review with a citation for each run and a verification table for the distinct source reports. Redirect standard output to a Markdown file. The exit codes are the same as for the terminal summary.
