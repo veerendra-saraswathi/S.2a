@@ -298,3 +298,7 @@ Compare two snapshots with `python tooling/imaging_assistant.py OLDER_STATE --co
 Use `python tooling/imaging_review_decision.py REVIEW_STATE --compare-evidence OTHER_STATE` to compare the recorded decision with the other viewer’s visible requirement wording and report path/digest pairs. A replaced report appears on both sides with its respective digest. Additional reports are listed even if every earlier report still matches.
 
 Reopening a decision checks current viewer access to the cited objects and their recorded fields. The complete receipt is available only while the viewer can read those fields.
+
+### Import an additional compression collection
+
+Pass `--extra-report PATH` when importing into a fresh snapshot, once per additional collection. Use paths relative to S0.7 pointing to completed `s07.codec-run.v1` fixed-2mbps reports. Each baseline must have a distinct collection ID. The requirement query includes the new collections. The fixed six-clip assistant evaluation retains its original scope. Encoder settings describe the recorded input dimensions. Claims about native capture resolution require acquisition metadata.

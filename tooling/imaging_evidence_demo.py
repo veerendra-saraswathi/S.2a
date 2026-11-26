@@ -57,7 +57,7 @@ def encoder_resolution(args):
     return 'x'.join(dimensions)
 
 
-def load_evidence(repo):
+def load_evidence(repo, extra_reports=()):
     objects = {name: {} for name in TYPES}
     links = []
     def store(kind, key, **values):
@@ -78,14 +78,26 @@ def load_evidence(repo):
                       (key, 'CitesReport', report), (key, 'AddressesRequirement', RESOLUTION_ID)])
 
     store('Requirement', RESOLUTION_ID, wording=RESOLUTION_WORDING)
-    for clip in CLIPS:
-        path = ('benchmarks/flir-4frnnp/run.json' if clip == CLIPS[0] else
-                f'benchmarks/flir-six-clips/{clip}.json')
+    sources = [('benchmarks/flir-4frnnp/run.json' if clip == CLIPS[0] else
+                f'benchmarks/flir-six-clips/{clip}.json', 'flirv_' + clip) for clip in CLIPS]
+    for extra in extra_reports:
+        path = Path(extra)
+        if path.is_absolute() or '..' in path.parts or not (repo / path).resolve().is_relative_to(repo.resolve()):
+            raise ValueError('extra report must be inside the S0.7 checkout')
+        sources.append((path.as_posix(), None))
+
+    seen = set()
+    for path, expected_id in sources:
         raw, report = record(path)
         data = json.loads(raw)
-        if (data['schema'], data['profile'], data['collection_id']) != (
-                's07.codec-run.v1', 'fixed-2mbps', 'flirv_' + clip):
+        collection_id = data['collection_id']
+        if (data['schema'] != 's07.codec-run.v1' or data['profile'] != 'fixed-2mbps'
+                or not isinstance(collection_id, str) or not collection_id.strip()
+                or (expected_id is not None and collection_id != expected_id)):
             raise ValueError(f'unexpected report identity: {path}')
+        if collection_id in seen:
+            raise ValueError(f'duplicate baseline collection: {collection_id}')
+        seen.add(collection_id)
         encoder, decoder = (data['binary_sha256'][k] for k in ('ewc_enc', 'ewc_dec'))
         manifest = data['manifest_sha256']
         if not all(re.fullmatch('[0-9a-f]{64}', h) for h in (encoder, decoder, manifest)):
@@ -102,7 +114,7 @@ def load_evidence(repo):
         add_run(report, 'baseline', times, threshold, collection, build, report)
         if objects['CodecRun'][report]['misses'] != metrics['deadline_misses']:
             raise ValueError(f'inconsistent deadline summary: {path}')
-        if clip == 'ePoikf':
+        if expected_id == 'flirv_ePoikf':
             raw_csv, csv_report = record('benchmarks/flir-epoikf-repeat/frame-times.csv')
             rows = list(csv.DictReader(io.StringIO(raw_csv.decode())))
             if len(rows) != len(frames) or any(
@@ -185,8 +197,8 @@ def query_project(folder, state):
     return sorted(rows, key=lambda r: (r['collection'], r['series']))
 
 
-def import_project(repo, folder, enable_review=False):
-    objects, edges = load_evidence(repo)
+def import_project(repo, folder, enable_review=False, extra_reports=()):
+    objects, edges = load_evidence(repo, extra_reports)
     # A completed snapshot is immutable. Build privately, then publish as one directory.
     if not folder.exists():
         folder.parent.mkdir(parents=True, exist_ok=True)
@@ -209,9 +221,9 @@ def import_project(repo, folder, enable_review=False):
     return query_project(folder, state)
 
 
-def run(repo):
+def run(repo, extra_reports=()):
     with tempfile.TemporaryDirectory(prefix='s2-imaging-') as tmp:
-        return import_project(repo, Path(tmp) / 'project')
+        return import_project(repo, Path(tmp) / 'project', extra_reports=extra_reports)
 
 
 if __name__ == '__main__':
@@ -221,7 +233,11 @@ if __name__ == '__main__':
     mode.add_argument('--store', type=Path, help='create or reuse this local evidence snapshot')
     mode.add_argument('--query', type=Path, help='open a saved snapshot without the source checkout')
     parser.add_argument('--enable-review', action='store_true', help='provision a local editor credential in a new snapshot')
+    parser.add_argument('--extra-report', action='append', default=[], metavar='PATH',
+                        help='include another baseline report relative to S0.7 (repeatable)')
     args = parser.parse_args()
+    if args.query and args.extra_report:
+        parser.error('--extra-report is an import option')
     if args.enable_review and not args.store:
         parser.error('--enable-review requires --store')
     if (args.s07 is None) != (args.query is not None):
@@ -230,9 +246,9 @@ if __name__ == '__main__':
         if args.query is not None:
             rows = query_project(args.query, json.loads((args.query / 'session.json').read_text()))
         elif args.store is not None:
-            rows = import_project(args.s07, args.store, args.enable_review)
+            rows = import_project(args.s07, args.store, args.enable_review, args.extra_report)
         else:
-            rows = run(args.s07)
+            rows = run(args.s07, args.extra_report)
     except (ValueError, KeyError, OSError, S2Error) as exc:
         parser.exit(1, f'imaging evidence: {exc}\n')
     for row in rows:

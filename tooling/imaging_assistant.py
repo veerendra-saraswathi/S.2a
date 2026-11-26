@@ -18,7 +18,8 @@ QUESTION = 'Did the two ePoikf replays erase its original deadline misses?'
 
 def original_runs(rows):
     baselines = [row for row in rows if row['series'] == 'baseline']
-    if sorted(r['collection'] for r in baselines) != sorted('flirv_' + clip for clip in CLIPS):
+    names = {r['collection'] for r in baselines}
+    if len(names) != len(baselines) or not all('flirv_' + clip in names for clip in CLIPS):
         raise ValueError('this evaluation requires one visible original run per benchmark clip')
 
     return baselines
@@ -159,7 +160,8 @@ def build_history(rows, prefix):
 
 
 def evidence_packet(rows):
-    baselines = original_runs(rows)
+    original_names = {'flirv_' + clip for clip in CLIPS}
+    baselines = [row for row in original_runs(rows) if row['collection'] in original_names]
     focus = [row for row in rows if row['collection'] == 'flirv_ePoikf']
     series = {row['series']: row for row in focus}
     if len(focus) != 3 or set(series) != {'baseline', 'repeat_1', 'repeat_2'}:

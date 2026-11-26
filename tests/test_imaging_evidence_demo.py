@@ -172,3 +172,33 @@ class ImagingEvidenceTests(unittest.TestCase):
         with self.assertRaises(Forbidden):
             service.call(state['viewer_token'], 'review.read', **scope)
         self.assertEqual(service.call(admins[0], 'review.read', **scope), receipt)
+
+    def test_extra_report_extends_only_the_new_snapshot(self):
+        import subprocess
+        from imaging_assistant import compare_runs, resolution_coverage, evidence_packet, read_rows
+        from imaging_evidence_demo import import_project
+        original = self.root / 'original'
+        original_rows = import_project(self.root, original, enable_review=True)
+        review_cli = Path(__file__).resolve().parents[1] / 'tooling' / 'imaging_review_decision.py'
+        read_receipt = [sys.executable, str(review_cli), str(original)]
+        receipt = subprocess.check_output(read_receipt + ['--credential', str(original / 'reviewer.token'),
+                                                         '--open', 'Coverage remains open'])
+        extra = 'benchmarks/synthetic-extra.json'
+        data = json.loads((self.root / 'benchmarks/flir-4frnnp/run.json').read_text())
+        data.update(collection_id='synthetic-extra', manifest_sha256='f'*64,
+                    encoder_args=['-W', '1920', '-H', '1200'])
+        (self.root / extra).write_text(json.dumps(data))
+        cli = review_cli.with_name('imaging_evidence_demo.py')
+        new = self.root / 'extended'
+        command = [sys.executable, str(cli), str(self.root), '--extra-report', extra, '--store', str(new)]
+        self.assertEqual(subprocess.check_output(command), subprocess.check_output(command))
+        rows = read_rows(new)
+        self.assertEqual(resolution_coverage(rows)['original_collections'], 7)
+        self.assertEqual(evidence_packet(rows)[0]['all_six_original_runs']['frames'], 6)
+        diff = compare_runs(original_rows, rows)
+        self.assertEqual(diff['unchanged_runs'], 8)
+        self.assertEqual(len(diff['changed_entries']), 1)
+        self.assertEqual(diff['changed_entries'][0]['after']['encoder_resolution'], '1920x1200')
+        self.assertEqual(subprocess.check_output(read_receipt), receipt)
+        with self.assertRaisesRegex(ValueError, 'duplicate baseline'):
+            load_evidence(self.root, [extra, extra])
