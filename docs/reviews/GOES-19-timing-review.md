@@ -19,3 +19,13 @@ To verify the timing rows and source links against the pinned S0.7 revision, run
 ```sh
 python3 tooling/check_goes_review.py ../S0.7
 ```
+
+### Query a saved snapshot
+
+Run from S.2a. The import saves the two scan filenames, integer microsecond timings, deadline miss count, source revision, report path and digest for each weather run. The camera summary continues to count camera collections only.
+
+```sh
+state="$HOME/.local/share/samanvaya/imaging-weather-v1"
+python tooling/imaging_evidence_demo.py ../S0.7 --store "$state" --include-goes --extra-report benchmarks/crowd-run-1080p-luma/run.json
+python tooling/imaging_evidence_demo.py --query "$state" --weather
+```

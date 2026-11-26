@@ -17,6 +17,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'src'), str(ROOT / 'platform')]
 sys.path[:0] = [str(p) for p in (ROOT / 'subsystems').iterdir() if p.is_dir()]
+from check_goes_review import timing_records
 from s2.service import Service
 from s2_platform import S2Error
 
@@ -140,7 +141,13 @@ def create_project(folder, objects, edges, enable_review=False):
         return call(op, expected_head=call('branches.head')['commit'], **kw)
 
     ids = {}
-    for kind, fields in TYPES.items():
+    schemas = dict(TYPES)
+    if 'WeatherTimingRun' in objects:
+        schemas['WeatherTimingRun'] = {
+            **dict.fromkeys(('key', 'display', 'label', 'revision', 'path', 'sha256', 'scan_1', 'scan_2'), 'string'),
+            **dict.fromkeys(('scan_1_us', 'scan_2_us', 'misses'), 'integer'),
+        }
+    for kind, fields in schemas.items():
         dataset = kind.lower()
         schema = {'properties': {k: {'type': v, 'required': True} for k, v in fields.items()}}
         change('datasets.create', dataset=dataset, primary_key='key', schema=schema)
@@ -168,7 +175,8 @@ def create_project(folder, objects, edges, enable_review=False):
         credential.touch(mode=0o600)
         credential.write_text(reviewer['token'])
     return {'branch': branch, 'viewer_token': reader['token'],
-            'source_reports': sorted(objects['EvidenceReport'])}
+            'source_reports': sorted(objects['EvidenceReport']),
+            'weather_runs': sorted(objects.get('WeatherTimingRun', {}))}
 
 
 def query_project(folder, state):
@@ -197,8 +205,18 @@ def query_project(folder, state):
     return sorted(rows, key=lambda r: (r['collection'], r['series']))
 
 
-def import_project(repo, folder, enable_review=False, extra_reports=()):
+def query_weather(folder):
+    state = json.loads((folder / 'session.json').read_text())
+    service = Service(folder / 'demo.db', storage_backend='json')
+    result = service.call(state['viewer_token'], 'objects.list', branch=state['branch'])
+    return sorted((obj['values'] for obj in result['objects'] if obj['type'] == 'WeatherTimingRun'),
+                  key=lambda row: row['key'])
+
+
+def import_project(repo, folder, enable_review=False, extra_reports=(), include_goes=False):
     objects, edges = load_evidence(repo, extra_reports)
+    if include_goes:
+        objects['WeatherTimingRun'] = {row['key']: row for row in timing_records(repo)}
     # A completed snapshot is immutable. Build privately, then publish as one directory.
     if not folder.exists():
         folder.parent.mkdir(parents=True, exist_ok=True)
@@ -216,6 +234,8 @@ def import_project(repo, folder, enable_review=False, extra_reports=()):
     state = json.loads((folder / 'session.json').read_text())
     if enable_review and not (folder / 'reviewer.token').is_file():
         raise ValueError('choose a new state directory to enable reviewer access')
+    if state.get('weather_runs', []) != sorted(objects.get('WeatherTimingRun', {})):
+        raise ValueError('weather evidence differs; choose a new state directory')
     if state['source_reports'] != sorted(objects['EvidenceReport']):
         raise ValueError('source reports differ from this saved snapshot; choose a new state directory')
     return query_project(folder, state)
@@ -235,7 +255,13 @@ if __name__ == '__main__':
     parser.add_argument('--enable-review', action='store_true', help='provision a local editor credential in a new snapshot')
     parser.add_argument('--extra-report', action='append', default=[], metavar='PATH',
                         help='include another baseline report relative to S0.7 (repeatable)')
+    parser.add_argument('--include-goes', action='store_true', help='store the pinned GOES weather timing evidence')
+    parser.add_argument('--weather', action='store_true', help='read saved weather timing records with --query')
     args = parser.parse_args()
+    if args.include_goes and not args.store:
+        parser.error('--include-goes requires --store')
+    if args.weather and not args.query:
+        parser.error('--weather requires --query')
     if args.query and args.extra_report:
         parser.error('--extra-report is an import option')
     if args.enable_review and not args.store:
@@ -243,10 +269,13 @@ if __name__ == '__main__':
     if (args.s07 is None) != (args.query is not None):
         parser.error('provide either an S0.7 checkout or --query STATE')
     try:
+        if args.weather:
+            print(json.dumps(query_weather(args.query), indent=2))
+            sys.exit(0)
         if args.query is not None:
             rows = query_project(args.query, json.loads((args.query / 'session.json').read_text()))
         elif args.store is not None:
-            rows = import_project(args.s07, args.store, args.enable_review, args.extra_report)
+            rows = import_project(args.s07, args.store, args.enable_review, args.extra_report, args.include_goes)
         else:
             rows = run(args.s07, args.extra_report)
     except (ValueError, KeyError, OSError, S2Error) as exc:

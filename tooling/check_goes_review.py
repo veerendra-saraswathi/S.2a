@@ -1,6 +1,8 @@
 """Reproduce the published weather timing rows from the cited S0.7 revision."""
 import argparse
 import difflib
+import json
+import hashlib
 from pathlib import Path
 import runpy
 import subprocess
@@ -11,7 +13,7 @@ FOLDER = "benchmarks/goes19-c13-two-scans"
 REVIEW = Path(__file__).resolve().parents[1] / "docs/reviews/GOES-19-timing-review.md"
 
 
-def evidence_rows(checkout):
+def timing_records(checkout):
     git = ["git", "-C", str(checkout)]
     paths = subprocess.check_output(
         git + ["ls-tree", "-r", "--name-only", REVISION, "--", FOLDER], text=True
@@ -27,17 +29,31 @@ def evidence_rows(checkout):
             target.write_bytes(subprocess.check_output(git + ["show", f"{REVISION}:{path}"]))
         compare = runpy.run_path(str(root / "compare_timings.py"))["compare"]
         _, runs = compare(root)
+        baseline = json.loads((root / "run.json").read_bytes())
+        scans = [frame["file"] for frame in baseline["metrics"]["frames"]]
+        records = []
+        for name, times, misses in runs:
+            if name.startswith("replay-"):
+                path, label, display = f"replays/{name}.json", name[:14], "Recorded replay"
+            elif name.startswith("Terminal transcript "):
+                path = "replays/reported-mac-times.csv"
+                label, display = "CSV row " + name.removeprefix("Terminal transcript "), name
+            else:
+                path, label, display = "run.json", "Baseline report", name
+            records.append(dict(key=name, display=display, label=label, revision=REVISION,
+                                path=f"{FOLDER}/{path}", sha256=hashlib.sha256((root / path).read_bytes()).hexdigest(),
+                                scan_1=scans[0], scan_2=scans[1], scan_1_us=round(times[0]*1000),
+                                scan_2_us=round(times[1]*1000), misses=misses))
+        return records
 
+
+def evidence_rows(checkout):
     rows = []
-    for name, (first, second), misses in runs:
-        if name.startswith("replay-"):
-            path, label, name = f"replays/{name}.json", name[:14], "Recorded replay"
-        elif name.startswith("Terminal transcript "):
-            path = "replays/reported-mac-times.csv"
-            label = "CSV row " + name.removeprefix("Terminal transcript ")
-        else:
-            path, label = "run.json", "Baseline report"
-        url = f"https://github.com/veerendra-saraswathi/S0.7/blob/{REVISION}/{FOLDER}/{path}"
+    for record in timing_records(checkout):
+        name, label, misses = record["display"], record["label"], record["misses"]
+        first, second = record["scan_1_us"] / 1000, record["scan_2_us"] / 1000
+        path = record["path"]
+        url = f"https://github.com/veerendra-saraswathi/S0.7/blob/{REVISION}/{path}"
         rows.append(f"| {name} | {first:.3f} | {second:.3f} | {misses} | [{label}]({url}) |")
     return rows
 
