@@ -97,6 +97,7 @@ def compare_receipt(receipt, folder):
 
     return {'requirement': receipt['requirement'], 'recorded_status': receipt['status'],
             'recorded_evidence_commit': receipt['evidence_commit'], 'comparison_commit': objects['commit'],
+            'evidence_changed': original != comparison or saved_wording != current_wording,
             'wording_matches': saved_wording == current_wording,
             'recorded_reports': len(original), 'matching_reports': len(original & comparison),
             'only_in_receipt': describe(original - comparison),
@@ -110,7 +111,10 @@ def main():
     mode.add_argument('--compare-evidence', type=Path, metavar='STATE', help='compare receipt citations with another snapshot')
     mode.add_argument('--open', metavar='NOTE', help='record a reviewer decision to keep coverage open')
     parser.add_argument('--credential', type=Path, help='file containing the editor credential')
+    parser.add_argument('--check', action='store_true', help='exit 2 when the compared wording or cited files differ')
     args = parser.parse_args()
+    if args.check and args.compare_evidence is None:
+        parser.error('--check requires --compare-evidence')
     if (args.open is None) != (args.credential is None):
         parser.error('--open and --credential must be supplied together')
     try:
@@ -129,7 +133,8 @@ def main():
     except (ValueError, OSError, KeyError, S2Error) as exc:
         parser.exit(1, f'imaging review: {exc}\n')
     print(json.dumps(result, indent=2, ensure_ascii=False))
+    return 2 if args.check and result['evidence_changed'] else 0
 
 
 if __name__ == '__main__':
-    main()
+    raise SystemExit(main())

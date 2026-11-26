@@ -221,6 +221,8 @@ Keep the state directory private: it contains the local database and viewer cred
 
 ### Evaluate a local model against saved imaging evidence
 
+The first Ollama pilot is complete. In the recorded local evaluation, `llama3.1:latest` correctly interpreted the two replays and incorrectly attributed the timing variation to thermal conditions. The evidence supports an undetermined cause. Routine reviews use the deterministic, cited answer. Model evaluation remains available for experiments.
+
 With the imaging snapshot above and Ollama running locally, try:
 
 ```sh
@@ -310,3 +312,13 @@ The [seven-collection compression review](docs/reviews/Samanvaya-compression-rev
 ```sh
 tooling/check_compression_review.sh "$HOME/.local/share/samanvaya/imaging-evidence-v4" ../S0.7 docs/reviews/Samanvaya-compression-review-v4.md
 ```
+
+### Check whether an open decision needs another evidence review
+
+Compare the requirement wording and the visible camera report paths and hashes with those cited by the saved reviewer decision. A new, removed or replaced report or changed wording sets `evidence_changed` to true. The comparison preserves the original decision.
+
+```sh
+python tooling/imaging_review_decision.py "$HOME/.local/share/samanvaya/imaging-review-v3" --compare-evidence "$HOME/.local/share/samanvaya/imaging-evidence-v4" --check
+```
+
+Exit 0 means the cited evidence matches, 2 means the evidence changed, and 1 indicates an execution error. Weather timing records are reviewed separately.
