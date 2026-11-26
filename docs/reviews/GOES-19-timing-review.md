@@ -41,3 +41,5 @@ Compare the v4 snapshot with the weather snapshot in one command. The top-level 
 ```sh
 python tooling/imaging_assistant.py "$HOME/.local/share/samanvaya/imaging-evidence-v4" --compare-to "$HOME/.local/share/samanvaya/imaging-weather-v1"
 ```
+
+Append `--weather-details` to include the saved before and after records for each weather difference. Each record carries the source path, revision, SHA-256 digest and row label. An absent side appears as `null`.

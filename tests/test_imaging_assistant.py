@@ -35,6 +35,17 @@ class ImagingAssistantTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             assistant.compare_weather([], [one, one])
 
+    def test_weather_details_preserve_sources_on_each_side(self):
+        original = dict(key='first', scan_1='000.raw', scan_2='001.raw', path='times.csv', label='CSV row 1')
+        revised = dict(original, label='CSV row 2')
+        added = dict(original, key='new')
+        removed = dict(original, key='old')
+        before, after = [original, removed], [revised, added]
+        self.assertNotIn('entries', assistant.compare_weather(before, after))
+        entries = assistant.compare_weather(before, after, details=True)['entries']
+        self.assertEqual([(e['change'], e['before'], e['after']) for e in entries],
+                         [('added', None, added), ('removed', removed, None), ('changed', original, revised)])
+
     def test_missing_replay_is_rejected(self):
         with self.assertRaises(ValueError):
             assistant.evidence_packet(self.rows[:2] + self.rows[3:])

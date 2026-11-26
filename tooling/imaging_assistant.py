@@ -71,7 +71,7 @@ def compare_runs(before_rows, after_rows):
             'unchanged_runs': unchanged, 'changed_entries': changes}
 
 
-def compare_weather(before, after):
+def compare_weather(before, after, *, details=False):
     def index(rows):
         runs = {row['key']: row for row in rows}
         if len(runs) != len(rows):
@@ -80,13 +80,19 @@ def compare_weather(before, after):
 
     old, new = index(before), index(after)
     shared = old.keys() & new.keys()
-    return {
+    result = {
         'runs_before': len(old), 'runs_after': len(new),
         'scans_after': sorted({r[field] for r in after for field in ('scan_1', 'scan_2')}),
         'added': sorted(new.keys() - old.keys()), 'removed': sorted(old.keys() - new.keys()),
         'changed': sorted(key for key in shared if old[key] != new[key]),
         'unchanged_runs': sum(old[key] == new[key] for key in shared),
     }
+    if details:
+        result['entries'] = [
+            {'key': key, 'change': change, 'before': old.get(key), 'after': new.get(key)}
+            for change in ('added', 'removed', 'changed') for key in result[change]
+        ]
+    return result
 
 
 def measurement(row):
@@ -335,10 +341,13 @@ def main(argv=None):
     mode.add_argument('--verify-reports', type=Path, metavar='SOURCE', help='verify all cited files under SOURCE')
     mode.add_argument('--summary', type=Path, metavar='SOURCE', help='print coverage, timing and file verification')
     mode.add_argument('--compare-to', type=Path, metavar='NEWER_STATE', help='compare visible run records between snapshots')
+    parser.add_argument('--weather-details', action='store_true', help='include saved weather records for each difference')
     parser.add_argument('--markdown', action='store_true', help='format the review summary as a Markdown report')
     parser.add_argument('--case', choices=('replay', 'cause'))
     parser.add_argument('--verify-file', type=Path, help='compare local file bytes with the selected report digest')
     args = parser.parse_args(argv)
+    if args.weather_details and not args.compare_to:
+        parser.error('--weather-details requires --compare-to')
     if args.markdown and not args.summary:
         parser.error('--markdown requires --summary')
     if args.verify_file is not None and args.report is None:
@@ -349,7 +358,8 @@ def main(argv=None):
     try:
         if args.compare_to:
             comparison = compare_runs(read_rows(args.state), read_rows(args.compare_to))
-            comparison['weather'] = compare_weather(query_weather(args.state), query_weather(args.compare_to))
+            comparison['weather'] = compare_weather(query_weather(args.state), query_weather(args.compare_to),
+                                                   details=args.weather_details)
             print(json.dumps(comparison, indent=2))
             return 0
         if args.verify_reports or args.summary:
