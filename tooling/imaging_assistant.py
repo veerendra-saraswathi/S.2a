@@ -46,6 +46,30 @@ def resolution_coverage(rows):
             'collections': entries}
 
 
+def compare_runs(before_rows, after_rows):
+    def index(rows):
+        indexed = {}
+        for row in rows:
+            key = (row['collection'], row['series'])
+            if key in indexed:
+                raise ValueError(f'ambiguous visible run identity: {key}')
+            indexed[key] = {field: row[field] for field in ('build', 'misses', 'frames', 'report', 'report_sha256')}
+            indexed[key]['encoder_resolution'] = row.get('encoder_resolution', 'unknown')
+        return indexed
+
+    before, after = index(before_rows), index(after_rows)
+    changes = []
+    unchanged = 0
+    for key in sorted(before.keys() | after.keys()):
+        old, new = before.get(key), after.get(key)
+        if old == new:
+            unchanged += 1
+            continue
+        changes.append({'collection': key[0], 'series': key[1], 'before': old, 'after': new})
+    return {'visible_runs_before': len(before), 'visible_runs_after': len(after),
+            'unchanged_runs': unchanged, 'changed_entries': changes}
+
+
 def measurement(row):
     return {key: row[key] for key in ('collection', 'misses', 'frames', 'report')}
 
@@ -290,6 +314,7 @@ def main(argv=None):
     mode.add_argument('--requirement', choices=[RESOLUTION_ID], help='show recorded encoder dimensions by collection')
     mode.add_argument('--verify-reports', type=Path, metavar='SOURCE', help='verify all cited files under SOURCE')
     mode.add_argument('--summary', type=Path, metavar='SOURCE', help='print coverage, timing and file verification')
+    mode.add_argument('--compare-to', type=Path, metavar='NEWER_STATE', help='compare visible run records between snapshots')
     parser.add_argument('--markdown', action='store_true', help='format the review summary as a Markdown report')
     parser.add_argument('--case', choices=('replay', 'cause'))
     parser.add_argument('--verify-file', type=Path, help='compare local file bytes with the selected report digest')
@@ -298,10 +323,13 @@ def main(argv=None):
         parser.error('--markdown requires --summary')
     if args.verify_file is not None and args.report is None:
         parser.error('--verify-file requires --report')
-    if (args.list_misses or args.collection is not None or args.build is not None or args.report is not None or args.requirement or args.verify_reports or args.summary) and args.case:
+    if (args.list_misses or args.collection is not None or args.build is not None or args.report is not None or args.requirement or args.verify_reports or args.summary or args.compare_to) and args.case:
         parser.error('--case applies only to a replay or cause question')
     case = args.case or 'replay'
     try:
+        if args.compare_to:
+            print(json.dumps(compare_runs(read_rows(args.state), read_rows(args.compare_to)), indent=2))
+            return 0
         if args.verify_reports or args.summary:
             rows = read_rows(args.state)
             result = verify_reports(rows, args.verify_reports or args.summary)

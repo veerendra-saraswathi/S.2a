@@ -208,3 +208,19 @@ class ImagingAssistantTests(unittest.TestCase):
         self.assertIn('| flirv_ePoikf | repeat_2 | 0 | 150 | `times.csv` |', report)
         self.assertIn('| `times.csv` | `unavailable` | Failed |', report)
         self.assertIn('Resolution acceptance: unassessed', report)
+
+    def test_compare_visible_runs(self):
+        rows = [dict(r, build='build', report_sha256='abc') for r in self.rows]
+        self.assertEqual(assistant.compare_runs(rows, reversed(rows))['unchanged_runs'], len(rows))
+        later = [dict(r) for r in rows]
+        later[0].update(encoder_resolution='640x512', report_sha256='def')
+        later[1]['series'] = 'repeat_3'
+        result = assistant.compare_runs(rows, later)
+        self.assertEqual(result['unchanged_runs'], len(rows) - 2)
+        changes = {r['series']: r for r in result['changed_entries']}
+        self.assertEqual(changes['baseline']['before']['encoder_resolution'], 'unknown')
+        self.assertEqual(changes['baseline']['after']['report_sha256'], 'def')
+        self.assertIsNone(changes['repeat_1']['after'])
+        self.assertIsNone(changes['repeat_3']['before'])
+        with self.assertRaisesRegex(ValueError, 'ambiguous'):
+            assistant.compare_runs(rows + rows[:1], later)
