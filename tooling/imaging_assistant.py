@@ -11,7 +11,7 @@ from pathlib import Path
 import sys
 import time
 
-from imaging_evidence_demo import CLIPS, RESOLUTION_ID, query_project, S2Error
+from imaging_evidence_demo import CLIPS, RESOLUTION_ID, query_project, query_weather, S2Error
 
 QUESTION = 'Did the two ePoikf replays erase its original deadline misses?'
 
@@ -69,6 +69,24 @@ def compare_runs(before_rows, after_rows):
         changes.append({'collection': key[0], 'series': key[1], 'before': old, 'after': new})
     return {'visible_runs_before': len(before), 'visible_runs_after': len(after),
             'unchanged_runs': unchanged, 'changed_entries': changes}
+
+
+def compare_weather(before, after):
+    def index(rows):
+        runs = {row['key']: row for row in rows}
+        if len(runs) != len(rows):
+            raise ValueError('ambiguous weather run identity')
+        return runs
+
+    old, new = index(before), index(after)
+    shared = old.keys() & new.keys()
+    return {
+        'runs_before': len(old), 'runs_after': len(new),
+        'scans_after': sorted({r[field] for r in after for field in ('scan_1', 'scan_2')}),
+        'added': sorted(new.keys() - old.keys()), 'removed': sorted(old.keys() - new.keys()),
+        'changed': sorted(key for key in shared if old[key] != new[key]),
+        'unchanged_runs': sum(old[key] == new[key] for key in shared),
+    }
 
 
 def measurement(row):
@@ -330,7 +348,9 @@ def main(argv=None):
     case = args.case or 'replay'
     try:
         if args.compare_to:
-            print(json.dumps(compare_runs(read_rows(args.state), read_rows(args.compare_to)), indent=2))
+            comparison = compare_runs(read_rows(args.state), read_rows(args.compare_to))
+            comparison['weather'] = compare_weather(query_weather(args.state), query_weather(args.compare_to))
+            print(json.dumps(comparison, indent=2))
             return 0
         if args.verify_reports or args.summary:
             rows = read_rows(args.state)

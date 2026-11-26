@@ -23,6 +23,18 @@ class ImagingAssistantTests(unittest.TestCase):
             self.rows.append(dict(collection='flirv_' + clip, series='baseline', misses=misses,
                                   frames=150, report=clip + '.json'))
 
+    def test_weather_comparison(self):
+        one = dict(key='first', scan_1='000.raw', scan_2='001.raw', misses=1)
+        two = dict(one, key='second')
+        result = assistant.compare_weather([one, two], [dict(two, misses=0), dict(one, key='third')])
+        self.assertEqual((result['added'], result['removed'], result['changed']),
+                         (['third'], ['first'], ['second']))
+        self.assertEqual(result['scans_after'], ['000.raw', '001.raw'])
+        self.assertEqual(assistant.compare_weather([], [one])['added'], ['first'])
+        self.assertEqual(assistant.compare_weather([one], [one])['unchanged_runs'], 1)
+        with self.assertRaises(ValueError):
+            assistant.compare_weather([], [one, one])
+
     def test_missing_replay_is_rejected(self):
         with self.assertRaises(ValueError):
             assistant.evidence_packet(self.rows[:2] + self.rows[3:])

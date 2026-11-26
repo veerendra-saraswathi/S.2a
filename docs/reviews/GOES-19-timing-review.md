@@ -35,3 +35,9 @@ Verify the saved viewer records against the pinned Git evidence, including both 
 ```sh
 python tooling/imaging_evidence_demo.py --query "$state" --verify-weather ../S0.7
 ```
+
+Compare the v4 snapshot with the weather snapshot in one command. The top-level totals cover camera runs. The weather section lists added, removed and changed run identities and the scan filenames visible in the newer snapshot.
+
+```sh
+python tooling/imaging_assistant.py "$HOME/.local/share/samanvaya/imaging-evidence-v4" --compare-to "$HOME/.local/share/samanvaya/imaging-weather-v1"
+```
