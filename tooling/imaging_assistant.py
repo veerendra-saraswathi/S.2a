@@ -10,7 +10,7 @@ from pathlib import Path
 import sys
 import time
 
-from imaging_evidence_demo import CLIPS, RESOLUTION_ID, RESOLUTION_WORDING, query_project, S2Error
+from imaging_evidence_demo import CLIPS, RESOLUTION_ID, query_project, S2Error
 
 QUESTION = 'Did the two ePoikf replays erase its original deadline misses?'
 
@@ -26,15 +26,20 @@ def original_runs(rows):
 def resolution_coverage(rows):
     baselines = original_runs(rows)
     entries = []
+    recorded_wordings = set()
     for row in baselines:
         requirement = row.get('requirement') or {}
         linked = requirement.get('key') == RESOLUTION_ID
+        if linked:
+            recorded_wordings.add(requirement['wording'])
         entries.append({'collection': row['collection'],
                         'encoder_resolution': row.get('encoder_resolution', 'unknown') if linked else 'unknown',
                         'baseline_report': row['report'], 'report_sha256': row['report_sha256'],
                         'replays': sorted(r['series'] for r in rows if r['collection'] == row['collection']
                                           and r['series'] != 'baseline')})
-    return {'requirement_id': RESOLUTION_ID, 'wording': RESOLUTION_WORDING,
+    if len(recorded_wordings) > 1:
+        raise ValueError('conflicting saved wording for the resolution requirement')
+    return {'requirement_id': RESOLUTION_ID, 'wording': next(iter(recorded_wordings), None),
             'acceptance': 'unassessed', 'original_collections': len(entries),
             'observed_encoder_resolutions': sorted({e['encoder_resolution'] for e in entries} - {'unknown'}),
             'collections': entries}

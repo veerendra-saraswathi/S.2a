@@ -167,3 +167,13 @@ class ImagingAssistantTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 assistant.verify_report(rows + [dict(report='report.csv', report_sha256='0' * 64)],
                                         'report.csv', file)
+
+    def test_requirement_wording_comes_from_snapshot(self):
+        rows = [dict(row, report_sha256='a' * 64) for row in self.rows]
+        self.assertIsNone(assistant.resolution_coverage(rows)['wording'])
+        for row in rows:
+            row['requirement'] = dict(key=assistant.RESOLUTION_ID, wording='Wording saved at import')
+        self.assertEqual(assistant.resolution_coverage(rows)['wording'], 'Wording saved at import')
+        rows[0]['requirement']['wording'] = 'Different revision'
+        with self.assertRaisesRegex(ValueError, 'conflicting saved wording'):
+            assistant.resolution_coverage(rows)

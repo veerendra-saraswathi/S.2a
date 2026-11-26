@@ -262,3 +262,5 @@ python tooling/imaging_assistant.py "$state" --requirement compression-input-res
 ```
 
 The query lists the encoder input dimensions recorded in each original report's `encoder_args` (`-W` and `-H`), the source path and digest, and any replays of that collection. Missing or ambiguous dimensions and older snapshots yield `unknown`. These dimensions describe the encoder configuration. The requirement specifies approximately 1920 × 1200 pixels. Acceptance remains unassessed pending a defined tolerance.
+
+The resolution query reads requirement wording from the linked snapshot records. Older snapshots without this link return JSON null for the wording.
