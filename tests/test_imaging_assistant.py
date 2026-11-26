@@ -189,3 +189,12 @@ class ImagingAssistantTests(unittest.TestCase):
             self.assertEqual((result['visible_runs'], result['unique_reports'], result['matched_reports']), (4, 3, 1))
             self.assertIn('error', result['reports'][0])
             self.assertEqual([item['matches'] for item in result['reports']], [False, False, True])
+
+    def test_summary_reports_unknown_coverage_and_failed_citations(self):
+        rows = [dict(row, report_sha256='a'*64) for row in self.rows]
+        audit = {'matched_reports': 6, 'unique_reports': 7,
+                 'reports': [{'report': 'times.csv', 'matches': False}]}
+        summary = assistant.review_summary(rows, audit)
+        for value in ('wording unavailable', 'unknown (6)', '32 / 900', 'repeat_1: 0 / 150',
+                      '6 / 7', 'Verification failed: times.csv'):
+            self.assertIn(value, summary)

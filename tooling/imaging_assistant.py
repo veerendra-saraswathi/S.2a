@@ -2,6 +2,7 @@
 # Copyright (c) 2026 Veerendra Kiran Bidarkota. All Rights Reserved.
 # Proprietary Commercial Software. See LICENSE.
 """Evaluate one local model on an imaging replay question using viewer evidence."""
+from collections import Counter
 import argparse
 import hashlib
 import http.client
@@ -238,6 +239,27 @@ def evaluate(folder, model, case='replay'):
             'expected_interpretation': expected}
 
 
+def review_summary(rows, audit):
+    coverage = resolution_coverage(rows)
+    originals = missed_collections(rows)
+    sizes = Counter(item['encoder_resolution'] for item in coverage['collections'])
+    lines = [
+        "Resolution requirement: " + (coverage['wording'] or 'wording unavailable in snapshot'),
+        "Recorded encoder dimensions (original collections): " +
+        ', '.join(f'{size} ({count})' for size, count in sorted(sizes.items())),
+        f"Resolution acceptance: {coverage['acceptance']}",
+        f"Original deadline misses: {originals['total_misses']} / {originals['total_frames']} frames",
+    ]
+    for row in rows:
+        if row['series'] != 'baseline':
+            lines.append(f"{row['collection']} {row['series']}: {row['misses']} / {row['frames']} deadline misses/frames")
+    lines.append(f"Source reports matching snapshot: {audit['matched_reports']} / {audit['unique_reports']}")
+    for report in audit['reports']:
+        if not report['matches']:
+            lines.append(f"Verification failed: {report['report']}")
+    return '\n'.join(lines)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('state', type=Path)
@@ -250,18 +272,20 @@ def main(argv=None):
     mode.add_argument('--report', metavar='PATH', help='show visible runs citing the exact recorded report path')
     mode.add_argument('--requirement', choices=[RESOLUTION_ID], help='show recorded encoder dimensions by collection')
     mode.add_argument('--verify-reports', type=Path, metavar='SOURCE', help='verify all cited files under SOURCE')
+    mode.add_argument('--summary', type=Path, metavar='SOURCE', help='print coverage, timing and file verification')
     parser.add_argument('--case', choices=('replay', 'cause'))
     parser.add_argument('--verify-file', type=Path, help='compare local file bytes with the selected report digest')
     args = parser.parse_args(argv)
     if args.verify_file is not None and args.report is None:
         parser.error('--verify-file requires --report')
-    if (args.list_misses or args.collection is not None or args.build is not None or args.report is not None or args.requirement or args.verify_reports) and args.case:
+    if (args.list_misses or args.collection is not None or args.build is not None or args.report is not None or args.requirement or args.verify_reports or args.summary) and args.case:
         parser.error('--case applies only to a replay or cause question')
     case = args.case or 'replay'
     try:
-        if args.verify_reports is not None:
-            result = verify_reports(read_rows(args.state), args.verify_reports)
-            print(json.dumps(result, indent=2))
+        if args.verify_reports or args.summary:
+            rows = read_rows(args.state)
+            result = verify_reports(rows, args.verify_reports or args.summary)
+            print(review_summary(rows, result) if args.summary else json.dumps(result, indent=2))
             return 0 if result['matched_reports'] == result['unique_reports'] else 2
         if args.requirement:
             print(json.dumps(resolution_coverage(read_rows(args.state)), indent=2))

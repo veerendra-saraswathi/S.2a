@@ -266,3 +266,5 @@ The query lists the encoder input dimensions recorded in each original report's 
 The resolution query reads requirement wording from the linked snapshot records. Older snapshots without this link return JSON null for the wording.
 
 Run `python tooling/imaging_assistant.py "$state" --verify-reports ../S0.7` to verify every distinct report cited by visible runs. The command checks shared files once and reports missing or changed files individually. Exit code 0 means all cited files matched, 2 flags individual failures, and 1 indicates the audit could not start.
+
+For a short terminal review, run `python tooling/imaging_assistant.py "$state" --summary ../S0.7`. Counts come from the saved snapshot. Source verification checks the current files and returns exit code 2 for individual failures. Resolution acceptance is reported separately.
