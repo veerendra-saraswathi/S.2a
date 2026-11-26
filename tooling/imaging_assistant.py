@@ -95,6 +95,25 @@ def verify_report(rows, report, local_file):
     return {'recorded_sha256': expected, 'file_sha256': actual, 'matches': actual == expected}
 
 
+def verify_reports(rows, root):
+    root = root.resolve(strict=True)
+    if not root.is_dir() or not rows:
+        raise ValueError('verification requires a source directory and visible report citations')
+    reports = []
+    for report in sorted({row['report'] for row in rows}):
+        item = {'report': report}
+        try:
+            path = (root / report).resolve(strict=True)
+            if not path.is_relative_to(root) or not path.is_file():
+                raise ValueError('expected a regular file within the source directory')
+            item.update(verify_report(rows, report, path))
+        except (OSError, RuntimeError, ValueError) as exc:
+            item.update(matches=False, error=str(exc))
+        reports.append(item)
+    return {'visible_runs': len(rows), 'unique_reports': len(reports),
+            'matched_reports': sum(item['matches'] for item in reports), 'reports': reports}
+
+
 def build_history(rows, prefix):
     builds = {row['build'] for row in rows if prefix and row['build'].startswith(prefix)}
     if not builds:
@@ -230,15 +249,20 @@ def main(argv=None):
     mode.add_argument('--build', metavar='ID', help='show visible runs for a build key or unique prefix')
     mode.add_argument('--report', metavar='PATH', help='show visible runs citing the exact recorded report path')
     mode.add_argument('--requirement', choices=[RESOLUTION_ID], help='show recorded encoder dimensions by collection')
+    mode.add_argument('--verify-reports', type=Path, metavar='SOURCE', help='verify all cited files under SOURCE')
     parser.add_argument('--case', choices=('replay', 'cause'))
     parser.add_argument('--verify-file', type=Path, help='compare local file bytes with the selected report digest')
     args = parser.parse_args(argv)
     if args.verify_file is not None and args.report is None:
         parser.error('--verify-file requires --report')
-    if (args.list_misses or args.collection is not None or args.build is not None or args.report is not None or args.requirement) and args.case:
+    if (args.list_misses or args.collection is not None or args.build is not None or args.report is not None or args.requirement or args.verify_reports) and args.case:
         parser.error('--case applies only to a replay or cause question')
     case = args.case or 'replay'
     try:
+        if args.verify_reports is not None:
+            result = verify_reports(read_rows(args.state), args.verify_reports)
+            print(json.dumps(result, indent=2))
+            return 0 if result['matched_reports'] == result['unique_reports'] else 2
         if args.requirement:
             print(json.dumps(resolution_coverage(read_rows(args.state)), indent=2))
             return 0

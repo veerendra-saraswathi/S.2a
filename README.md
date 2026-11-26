@@ -264,3 +264,5 @@ python tooling/imaging_assistant.py "$state" --requirement compression-input-res
 The query lists the encoder input dimensions recorded in each original report's `encoder_args` (`-W` and `-H`), the source path and digest, and any replays of that collection. Missing or ambiguous dimensions and older snapshots yield `unknown`. These dimensions describe the encoder configuration. The requirement specifies approximately 1920 × 1200 pixels. Acceptance remains unassessed pending a defined tolerance.
 
 The resolution query reads requirement wording from the linked snapshot records. Older snapshots without this link return JSON null for the wording.
+
+Run `python tooling/imaging_assistant.py "$state" --verify-reports ../S0.7` to verify every distinct report cited by visible runs. The command checks shared files once and reports missing or changed files individually. Exit code 0 means all cited files matched, 2 flags individual failures, and 1 indicates the audit could not start.

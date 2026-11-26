@@ -177,3 +177,15 @@ class ImagingAssistantTests(unittest.TestCase):
         rows[0]['requirement']['wording'] = 'Different revision'
         with self.assertRaisesRegex(ValueError, 'conflicting saved wording'):
             assistant.resolution_coverage(rows)
+
+    def test_verify_all_reports_counts_shared_citations_and_continues_on_failure(self):
+        sha = 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'
+        rows = [dict(report=name, report_sha256=sha) for name in ('a.csv', 'b.csv', 'c.csv', 'c.csv')]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'b.csv').write_bytes(b'changed')
+            (root / 'c.csv').write_bytes(b'abc')
+            result = assistant.verify_reports(rows, root)
+            self.assertEqual((result['visible_runs'], result['unique_reports'], result['matched_reports']), (4, 3, 1))
+            self.assertIn('error', result['reports'][0])
+            self.assertEqual([item['matches'] for item in result['reports']], [False, False, True])
