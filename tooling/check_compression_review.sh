@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: LicenseRef-Samanvaya-Proprietary
 set -eu
 
-if [ "$#" -ne 2 ]; then
-    echo 'Usage: check_compression_review.sh SNAPSHOT S07_CHECKOUT' >&2
+if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+    echo 'Usage: check_compression_review.sh SNAPSHOT S07_CHECKOUT [REVIEW_FILE]' >&2
     exit 1
 fi
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-review="$repo/docs/reviews/Samanvaya-compression-review.md"
+review=${3:-"$repo/docs/reviews/Samanvaya-compression-review.md"}
 generated=$(mktemp)
 trap 'rm -f "$generated"' EXIT
 "${PYTHON:-python3}" "$repo/tooling/imaging_assistant.py" "$1" --summary "$2" --markdown > "$generated" || {
