@@ -277,3 +277,5 @@ tmp_review=$(mktemp) &&
 python tooling/imaging_assistant.py "$state" --summary ../S0.7 --markdown > "$tmp_review" &&
 mv "$tmp_review" "$review"
 ```
+
+Check the tracked review from an existing snapshot with `tooling/check_compression_review.sh "$state" ../S0.7`. The check verifies the cited files, regenerates the Markdown in a temporary file, and compares its bytes with the tracked copy. A source verification failure or a difference in the review returns a nonzero exit status.
