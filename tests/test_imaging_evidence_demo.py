@@ -135,3 +135,13 @@ class ImagingEvidenceTests(unittest.TestCase):
         self.assertEqual(json.loads(subprocess.check_output([sys.executable, str(cli), str(new)]))['status'],
                          'unrecorded')
         self.assertEqual(subprocess.check_output(read_old), receipt)
+
+        same = json.loads(subprocess.check_output(read_old + ['--compare-evidence', str(old)]))
+        self.assertEqual(same['matching_reports'], 7)
+        comparison = json.loads(subprocess.check_output(read_old + ['--compare-evidence', str(new)]))
+        self.assertTrue(comparison['wording_matches'])
+        self.assertEqual(comparison['matching_reports'], 6)
+        self.assertEqual(comparison['only_in_receipt'], [dict(path=updated['baseline_report'], sha256=old_digest)])
+        self.assertEqual(comparison['only_in_comparison'],
+                         [dict(path=updated['baseline_report'], sha256=updated['report_sha256'])])
+        self.assertEqual(subprocess.check_output(read_old), receipt)

@@ -294,3 +294,5 @@ python tooling/imaging_review_decision.py "$review_state"
 Recording the same decision twice returns the original receipt. The viewer can reopen it after restart. A new evidence snapshot has its own review.
 
 Compare two snapshots with `python tooling/imaging_assistant.py OLDER_STATE --compare-to NEWER_STATE`. Each snapshot is read with its own viewer credential. The comparison matches visible runs by collection and series and compares counts, build, encoder dimensions, report path and recorded digest. A null side means the run was visible in only one input. This check compares saved run evidence independently of branch IDs, review decisions and the current source checkout.
+
+Use `python tooling/imaging_review_decision.py REVIEW_STATE --compare-evidence OTHER_STATE` to compare the recorded decision with the other viewer’s visible requirement wording and report path/digest pairs. A replaced report appears on both sides with its respective digest. Additional reports are listed even if every earlier report still matches.

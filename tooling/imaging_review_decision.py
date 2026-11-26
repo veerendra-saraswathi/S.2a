@@ -40,14 +40,7 @@ class ReviewService(Service):
                 return previous
             raise Conflict('a decision is already recorded for this snapshot')
         objects = self.list_objects(db, ctx, branch)
-        evidence = []
-        for obj in objects['objects']:
-            values = obj['values']
-            if obj['type'] == 'Requirement' and values['key'] == RESOLUTION_ID:
-                evidence.append({'object_id': obj['id'], 'revision': obj['revision'], 'wording': values['wording']})
-            elif obj['type'] == 'EvidenceReport':
-                evidence.append({'object_id': obj['id'], 'revision': obj['revision'],
-                                 'path': values['path'], 'sha256': values['sha256']})
+        evidence = visible_evidence(objects)
         if not any('wording' in ref for ref in evidence) or not any('path' in ref for ref in evidence):
             raise S2Error('snapshot requires visible resolution wording and evidence reports')
         receipt = {'requirement': RESOLUTION_ID, 'status': 'open', 'note': note,
@@ -57,10 +50,52 @@ class ReviewService(Service):
         return receipt
 
 
+def visible_evidence(objects):
+    evidence = []
+    for obj in objects['objects']:
+        values = obj['values']
+        if obj['type'] == 'Requirement' and values['key'] == RESOLUTION_ID:
+            evidence.append({'object_id': obj['id'], 'revision': obj['revision'], 'wording': values['wording']})
+        elif obj['type'] == 'EvidenceReport':
+            evidence.append({'object_id': obj['id'], 'revision': obj['revision'],
+                             'path': values['path'], 'sha256': values['sha256']})
+    return evidence
+
+
+def compare_receipt(receipt, folder):
+    if receipt['status'] == 'unrecorded':
+        raise ValueError('no decision recorded in the first snapshot')
+    state = json.loads((folder / 'session.json').read_text())
+    database = folder / 'demo.db'
+    if not database.is_file():
+        raise ValueError('missing comparison database')
+    objects = Service(database, storage_backend='json').call(
+        state['viewer_token'], 'objects.list', branch=state['branch'])
+    current = visible_evidence(objects)
+    def citations(evidence):
+        return {(ref['path'], ref['sha256']) for ref in evidence if 'path' in ref}
+
+    original = citations(receipt['evidence'])
+    comparison = citations(current)
+    saved_wording = [r['wording'] for r in receipt['evidence'] if 'wording' in r]
+    current_wording = [r['wording'] for r in current if 'wording' in r]
+    def describe(items):
+        return [dict(path=path, sha256=sha) for path, sha in sorted(items)]
+
+    return {'requirement': receipt['requirement'], 'recorded_status': receipt['status'],
+            'recorded_evidence_commit': receipt['evidence_commit'], 'comparison_commit': objects['commit'],
+            'wording_matches': saved_wording == current_wording,
+            'recorded_reports': len(original), 'matching_reports': len(original & comparison),
+            'only_in_receipt': describe(original - comparison),
+            'only_in_comparison': describe(comparison - original)}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('state', type=Path)
-    parser.add_argument('--open', metavar='NOTE', help='record a reviewer decision to keep coverage open')
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--compare-evidence', type=Path, metavar='STATE', help='compare receipt citations with another snapshot')
+    mode.add_argument('--open', metavar='NOTE', help='record a reviewer decision to keep coverage open')
     parser.add_argument('--credential', type=Path, help='file containing the editor credential')
     args = parser.parse_args()
     if (args.open is None) != (args.credential is None):
@@ -73,6 +108,8 @@ def main():
         service = ReviewService(database)
         if args.open is None:
             result = service.call(state['viewer_token'], 'review.read', branch=state['branch'])
+            if args.compare_evidence is not None:
+                result = compare_receipt(result, args.compare_evidence)
         else:
             result = service.call(args.credential.read_text().strip(), 'review.open',
                                   branch=state['branch'], note=args.open)
