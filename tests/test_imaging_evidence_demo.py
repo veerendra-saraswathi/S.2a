@@ -145,3 +145,30 @@ class ImagingEvidenceTests(unittest.TestCase):
         self.assertEqual(comparison['only_in_comparison'],
                          [dict(path=updated['baseline_report'], sha256=updated['report_sha256'])])
         self.assertEqual(subprocess.check_output(read_old), receipt)
+
+    def test_reopened_receipt_respects_current_field_permissions(self):
+        from unittest.mock import patch
+        from imaging_evidence_demo import Service, import_project
+        from imaging_review_decision import ReviewService
+        from s2_platform import Forbidden
+
+        bootstrap = Service.bootstrap
+        admins = []
+        def provision(service, tenant, level, compartments):
+            admin = bootstrap(service, tenant, level, compartments + ['REVIEW'])
+            admins.append(admin['token'])
+            return admin
+
+        folder = self.root / 'policy-test'
+        with patch.object(Service, 'bootstrap', provision):
+            import_project(self.root, folder, enable_review=True)
+        state = json.loads((folder / 'session.json').read_text())
+        service = ReviewService(folder / 'demo.db')
+        scope = {'branch': state['branch']}
+        receipt = service.call((folder / 'reviewer.token').read_text(), 'review.open', note='Open', **scope)
+        self.assertEqual(service.call(state['viewer_token'], 'review.read', **scope), receipt)
+        service.call(admins[0], 'policy.restrict', resource='type/EvidenceReport/property/path',
+                     label={'compartments': ['REVIEW']}, **scope)
+        with self.assertRaises(Forbidden):
+            service.call(state['viewer_token'], 'review.read', **scope)
+        self.assertEqual(service.call(admins[0], 'review.read', **scope), receipt)

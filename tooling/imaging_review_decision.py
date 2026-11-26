@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 from imaging_evidence_demo import RESOLUTION_ID, Service, S2Error
-from s2_platform import Conflict, now
+from s2_platform import Conflict, Forbidden, now
 
 
 class ReviewService(Service):
@@ -25,9 +25,14 @@ class ReviewService(Service):
         if row is None:
             return {'status': 'unrecorded', 'requirement': RESOLUTION_ID}
         receipt = json.loads(row['receipt'])
-        head, manifest = self._head_manifest(db, ctx, branch)
+        _, manifest = self._head_manifest(db, ctx, branch)
+        pinned = self.store.manifest(db, ctx.tenant, receipt['evidence_commit'])
         for ref in receipt['evidence']:
-            self.kernel.visible_object(db, ctx, manifest, ref['object_id'])
+            fields = {'key', 'wording'} if 'wording' in ref else {'path', 'sha256'}
+            for version in (manifest, pinned):
+                obj = self.kernel.visible_object(db, ctx, version, ref['object_id'])
+                if not fields.issubset(obj['values']):
+                    raise Forbidden('Access to the cited evidence is required')
         return receipt
 
     def record(self, db, ctx, branch, note):
@@ -54,9 +59,17 @@ def visible_evidence(objects):
     evidence = []
     for obj in objects['objects']:
         values = obj['values']
-        if obj['type'] == 'Requirement' and values['key'] == RESOLUTION_ID:
+        if obj['type'] == 'Requirement':
+            if 'key' not in values:
+                raise Forbidden('Access to the cited evidence is required')
+            if values['key'] != RESOLUTION_ID:
+                continue
+            if 'wording' not in values:
+                raise Forbidden('Access to the cited evidence is required')
             evidence.append({'object_id': obj['id'], 'revision': obj['revision'], 'wording': values['wording']})
         elif obj['type'] == 'EvidenceReport':
+            if not {'path', 'sha256'}.issubset(values):
+                raise Forbidden('Access to the cited evidence is required')
             evidence.append({'object_id': obj['id'], 'revision': obj['revision'],
                              'path': values['path'], 'sha256': values['sha256']})
     return evidence
