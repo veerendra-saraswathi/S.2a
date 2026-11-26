@@ -213,6 +213,15 @@ def query_weather(folder):
                   key=lambda row: row['key'])
 
 
+def verify_weather(saved, expected):
+    # Sorting keeps record order immaterial while preserving duplicate records.
+    key = lambda row: row['key']
+    if sorted(saved, key=key) != sorted(expected, key=key):
+        raise ValueError('saved weather records differ from the pinned evidence')
+    return {'revision': expected[0]['revision'], 'verified_runs': len(saved),
+            'distinct_reports': len({row['path'] for row in saved})}
+
+
 def import_project(repo, folder, enable_review=False, extra_reports=(), include_goes=False):
     objects, edges = load_evidence(repo, extra_reports)
     if include_goes:
@@ -257,7 +266,10 @@ if __name__ == '__main__':
                         help='include another baseline report relative to S0.7 (repeatable)')
     parser.add_argument('--include-goes', action='store_true', help='store the pinned GOES weather timing evidence')
     parser.add_argument('--weather', action='store_true', help='read saved weather timing records with --query')
+    parser.add_argument('--verify-weather', type=Path, metavar='S07', help='compare saved weather records to pinned source files')
     args = parser.parse_args()
+    if args.verify_weather and (not args.query or args.weather):
+        parser.error('--verify-weather requires --query and is separate from --weather')
     if args.include_goes and not args.store:
         parser.error('--include-goes requires --store')
     if args.weather and not args.query:
@@ -269,6 +281,10 @@ if __name__ == '__main__':
     if (args.s07 is None) != (args.query is not None):
         parser.error('provide either an S0.7 checkout or --query STATE')
     try:
+        if args.verify_weather:
+            result = verify_weather(query_weather(args.query), timing_records(args.verify_weather))
+            print(json.dumps(result, indent=2))
+            sys.exit(0)
         if args.weather:
             print(json.dumps(query_weather(args.query), indent=2))
             sys.exit(0)

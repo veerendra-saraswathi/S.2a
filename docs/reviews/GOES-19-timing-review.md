@@ -29,3 +29,9 @@ state="$HOME/.local/share/samanvaya/imaging-weather-v1"
 python tooling/imaging_evidence_demo.py ../S0.7 --store "$state" --include-goes --extra-report benchmarks/crowd-run-1080p-luma/run.json
 python tooling/imaging_evidence_demo.py --query "$state" --weather
 ```
+
+Verify the saved viewer records against the pinned Git evidence, including both row labels in the shared transcript file:
+
+```sh
+python tooling/imaging_evidence_demo.py --query "$state" --verify-weather ../S0.7
+```

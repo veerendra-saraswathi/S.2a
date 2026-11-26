@@ -8,10 +8,19 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tooling'))
-from imaging_evidence_demo import CLIPS, load_evidence, run
+from imaging_evidence_demo import CLIPS, load_evidence, run, verify_weather
 
 
 class ImagingEvidenceTests(unittest.TestCase):
+    def test_verify_weather_checks_row_identity_and_multiplicity(self):
+        first = dict(key='one', path='shared.csv', revision='abc', label='CSV row 1')
+        second = dict(first, key='two', label='CSV row 2')
+        expected = [first, second]
+        self.assertEqual(verify_weather([second, first], expected)['distinct_reports'], 1)
+        for saved in ([first], [first, first], [first, dict(second, label='CSV row 1')]):
+            with self.assertRaises(ValueError):
+                verify_weather(saved, expected)
+
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
