@@ -303,6 +303,8 @@ Reopening a decision checks current viewer access to the cited objects and their
 
 Pass `--extra-report PATH` when importing into a fresh snapshot, once per additional collection. Use paths relative to S0.7 pointing to completed `s07.codec-run.v1` fixed-2mbps reports. Each baseline must have a distinct collection ID. The requirement query includes the new collections. The fixed six-clip assistant evaluation retains its original scope. Encoder settings describe the recorded input dimensions. Claims about native capture resolution require acquisition metadata.
 
+The [GOES-19 timing review](docs/reviews/GOES-19-timing-review.md) traces five runs of the same two weather scans to the recorded reports and terminal transcripts.
+
 The [seven-collection compression review](docs/reviews/Samanvaya-compression-review-v4.md) adds the 1920 × 1080 Crowd Run visible-luma benchmark to the six FLIR originals. Reproduce it from the S.2a checkout:
 
 ```sh
