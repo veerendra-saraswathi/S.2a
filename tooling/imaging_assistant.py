@@ -10,7 +10,7 @@ from pathlib import Path
 import sys
 import time
 
-from imaging_evidence_demo import CLIPS, query_project, S2Error
+from imaging_evidence_demo import CLIPS, RESOLUTION_ID, RESOLUTION_WORDING, query_project, S2Error
 
 QUESTION = 'Did the two ePoikf replays erase its original deadline misses?'
 
@@ -21,6 +21,23 @@ def original_runs(rows):
         raise ValueError('this evaluation requires one visible original run per benchmark clip')
 
     return baselines
+
+
+def resolution_coverage(rows):
+    baselines = original_runs(rows)
+    entries = []
+    for row in baselines:
+        requirement = row.get('requirement') or {}
+        linked = requirement.get('key') == RESOLUTION_ID
+        entries.append({'collection': row['collection'],
+                        'encoder_resolution': row.get('encoder_resolution', 'unknown') if linked else 'unknown',
+                        'baseline_report': row['report'], 'report_sha256': row['report_sha256'],
+                        'replays': sorted(r['series'] for r in rows if r['collection'] == row['collection']
+                                          and r['series'] != 'baseline')})
+    return {'requirement_id': RESOLUTION_ID, 'wording': RESOLUTION_WORDING,
+            'acceptance': 'unassessed', 'original_collections': len(entries),
+            'observed_encoder_resolutions': sorted({e['encoder_resolution'] for e in entries} - {'unknown'}),
+            'collections': entries}
 
 
 def measurement(row):
@@ -207,15 +224,19 @@ def main(argv=None):
     mode.add_argument('--collection', metavar='ID', help='show visible runs and evidence for one collection')
     mode.add_argument('--build', metavar='ID', help='show visible runs for a build key or unique prefix')
     mode.add_argument('--report', metavar='PATH', help='show visible runs citing the exact recorded report path')
+    mode.add_argument('--requirement', choices=[RESOLUTION_ID], help='show recorded encoder dimensions by collection')
     parser.add_argument('--case', choices=('replay', 'cause'))
     parser.add_argument('--verify-file', type=Path, help='compare local file bytes with the selected report digest')
     args = parser.parse_args(argv)
     if args.verify_file is not None and args.report is None:
         parser.error('--verify-file requires --report')
-    if (args.list_misses or args.collection is not None or args.build is not None or args.report is not None) and args.case:
+    if (args.list_misses or args.collection is not None or args.build is not None or args.report is not None or args.requirement) and args.case:
         parser.error('--case applies only to a replay or cause question')
     case = args.case or 'replay'
     try:
+        if args.requirement:
+            print(json.dumps(resolution_coverage(read_rows(args.state)), indent=2))
+            return 0
         if args.report is not None:
             rows = read_rows(args.state)
             result = report_history(rows, args.report)

@@ -250,3 +250,15 @@ Follow the build key from any collection with `python3 tooling/imaging_assistant
 To trace a citation back to the runs that use it, copy its exact recorded path into `--report`. For example, `python3 tooling/imaging_assistant.py "$state" --report benchmarks/flir-epoikf-repeat/frame-times.csv` returns the two ePoikf replays with their series, counts and build keys. The lookup uses the saved viewer snapshot and does not open the source file.
 
 Add `--verify-file /path/to/local/copy` to a `--report` lookup to compare the local bytes with the SHA-256 recorded at import. The JSON includes both digests and a `matches` flag. Exit codes are 0 for a match, 2 for different bytes and 1 for an unavailable file or report.
+
+### Review recorded input resolution
+
+From the S.2a checkout, create a new snapshot and query the compression requirement:
+
+```sh
+state="$HOME/.local/share/samanvaya/imaging-evidence-v2"
+python tooling/imaging_evidence_demo.py ../S0.7 --store "$state"
+python tooling/imaging_assistant.py "$state" --requirement compression-input-resolution
+```
+
+The query lists the encoder input dimensions recorded in each original report's `encoder_args` (`-W` and `-H`), the source path and digest, and any replays of that collection. Missing or ambiguous dimensions and older snapshots yield `unknown`. These dimensions describe the encoder configuration. The requirement specifies approximately 1920 × 1200 pixels. Acceptance remains unassessed pending a defined tolerance.

@@ -20,13 +20,17 @@ sys.path[:0] = [str(p) for p in (ROOT / 'subsystems').iterdir() if p.is_dir()]
 from s2.service import Service
 from s2_platform import S2Error
 
+RESOLUTION_ID = 'compression-input-resolution'
+RESOLUTION_WORDING = 'an indicative input resolution of approximately 1920 × 1200 pixels'
+
 TYPES = {
-    'Collection': {'key': 'string', 'name': 'string'},
+    'Requirement': {'key': 'string', 'wording': 'string'},
+    'Collection': {'key': 'string', 'name': 'string', 'encoder_resolution': 'string'},
     'CodecBuild': {'key': 'string', 'encoder': 'string', 'decoder': 'string'},
     'EvidenceReport': {'key': 'string', 'path': 'string', 'sha256': 'string'},
     'CodecRun': {'key': 'string', 'series': 'string', 'frames': 'integer', 'misses': 'integer'},
 }
-RELATIONS = {'UsesCollection': 'Collection', 'UsesBuild': 'CodecBuild', 'CitesReport': 'EvidenceReport'}
+RELATIONS = {'AddressesRequirement': 'Requirement', 'UsesCollection': 'Collection', 'UsesBuild': 'CodecBuild', 'CitesReport': 'EvidenceReport'}
 CLIPS = ('4FRnNp', '5RSrbW', '6tLtjd', 'SCiKdG', 'ePoikf', 'vbrSzr')
 
 
@@ -39,6 +43,18 @@ def duration(value):
     if not math.isfinite(value) or value < 0:
         raise ValueError('invalid encoder time')
     return value
+
+
+def encoder_resolution(args):
+    dimensions = []
+    for flag in ('-W', '-H'):
+        if not isinstance(args, list) or args.count(flag) != 1:
+            return 'unknown'
+        index = args.index(flag) + 1
+        if index >= len(args) or not re.fullmatch(r'[1-9][0-9]*', str(args[index])):
+            return 'unknown'
+        dimensions.append(str(args[index]))
+    return 'x'.join(dimensions)
 
 
 def load_evidence(repo):
@@ -59,8 +75,9 @@ def load_evidence(repo):
         store('CodecRun', key, series=series, frames=len(times),
               misses=sum(t > threshold for t in times))
         links.extend([(key, 'UsesCollection', collection), (key, 'UsesBuild', build),
-                      (key, 'CitesReport', report)])
+                      (key, 'CitesReport', report), (key, 'AddressesRequirement', RESOLUTION_ID)])
 
+    store('Requirement', RESOLUTION_ID, wording=RESOLUTION_WORDING)
     for clip in CLIPS:
         path = ('benchmarks/flir-4frnnp/run.json' if clip == CLIPS[0] else
                 f'benchmarks/flir-six-clips/{clip}.json')
@@ -74,7 +91,8 @@ def load_evidence(repo):
         if not all(re.fullmatch('[0-9a-f]{64}', h) for h in (encoder, decoder, manifest)):
             raise ValueError(f'invalid evidence hash: {path}')
         build = store('CodecBuild', digest((encoder + decoder).encode()), encoder=encoder, decoder=decoder)
-        collection = store('Collection', manifest, name=data['collection_id'])
+        collection = store('Collection', manifest, name=data['collection_id'],
+                           encoder_resolution=encoder_resolution(data.get('encoder_args')))
         metrics = data['metrics']
         threshold = duration(metrics['encoder_deadline_ms'])
         frames = metrics['frames']
@@ -152,6 +170,8 @@ def query_project(folder, state):
         if obj['type'] == 'CodecRun':
             values = obj['values']
             rows.append({'collection': related[oid, 'UsesCollection']['name'],
+                         'encoder_resolution': related[oid, 'UsesCollection'].get('encoder_resolution', 'unknown'),
+                         'requirement': related.get((oid, 'AddressesRequirement')),
                          'series': values['series'], 'frames': values['frames'],
                          'misses': values['misses'], 'build': related[oid, 'UsesBuild']['key'],
                          'report': related[oid, 'CitesReport']['path'],

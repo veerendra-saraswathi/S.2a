@@ -59,3 +59,20 @@ class ImagingEvidenceTests(unittest.TestCase):
         result = subprocess.check_output([sys.executable, str(cli), '--query', str(state)])
         self.assertEqual(result, first)
         self.assertEqual(result.count(b' | build '), 8)
+
+    def test_resolution_coverage_after_reimport(self):
+        from imaging_assistant import resolution_coverage
+        from imaging_evidence_demo import import_project
+        for clip, dims in [('4frnnp/run', ['640', '512']), ('six-clips/ePoikf', ['1920', '1200'])]:
+            path = self.root / f'benchmarks/flir-{clip}.json'
+            data = json.loads(path.read_text())
+            data['encoder_args'] = ['-W', dims[0], '-H', dims[1]]
+            path.write_text(json.dumps(data))
+        folder = self.root / 'saved'
+        first = resolution_coverage(import_project(self.root, folder))
+        self.assertEqual(first, resolution_coverage(import_project(self.root, folder)))
+        self.assertEqual(first['original_collections'], 6)
+        self.assertEqual(first['observed_encoder_resolutions'], ['1920x1200', '640x512'])
+        by_name = {r['collection']: r for r in first['collections']}
+        self.assertEqual(by_name['flirv_ePoikf']['replays'], ['repeat_1', 'repeat_2'])
+        self.assertEqual(by_name['flirv_5RSrbW']['encoder_resolution'], 'unknown')
