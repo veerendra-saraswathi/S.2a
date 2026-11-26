@@ -14,8 +14,8 @@ Scan 1 exceeded the deadline in all five runs. Scan 2 exceeded it in two. The re
 
 These two weather scans extend the evidence for large raster inputs. Camera-video resolution acceptance remains unassessed in the [seven-collection review](Samanvaya-compression-review-v4.md).
 
-To reproduce the timing table from S.2a with the sibling S0.7 checkout at revision `2431b1b`, run
+To verify the timing rows and source links against the pinned S0.7 revision, run from S.2a:
 
 ```sh
-python3 ../S0.7/benchmarks/goes19-c13-two-scans/compare_timings.py
+python3 tooling/check_goes_review.py ../S0.7
 ```
